@@ -75,6 +75,24 @@ def add_weight(res1, res2):
     # print(weight)
     return weight
 
+def cal_variable_sequence_length(variable_info_list):
+    '''
+    计算各变量在每个测试样例下的序列长度之和
+    '''
+    res_list = []
+    for item in variable_info_list:
+        tmp_dic = {}
+        for i in item:
+            variable_info = i['info']
+            for var in variable_info:
+                # vars_len[var] = len(wa_info[var]) + len(ac_info[vars_pair[var]['var']])
+                if var not in tmp_dic:
+                    tmp_dic[var] = len(variable_info[var])
+                else:
+                    tmp_dic[var] += len(variable_info[var])
+        res_list.append(tmp_dic)
+    return res_list
+
 def prepare_matrix(file_dir_path, test_dir_path):
     '''
     准备矩阵
@@ -90,6 +108,8 @@ def prepare_matrix(file_dir_path, test_dir_path):
         cnt += 1
         if cnt == 2:
             break
+    variable_sequence_length = cal_variable_sequence_length(variable_info_list)
+    # print(variable_sequence_length)
     variable_info_list_length = len(variable_info_list)
     dis_matrix = []
     maxn = 0
@@ -100,17 +120,30 @@ def prepare_matrix(file_dir_path, test_dir_path):
         for j in range(i+1, variable_info_list_length):
             weight = add_weight(variable_info_list[i], variable_info_list[j])
             vars_pair = util.cal_KM(weight)
-            # 这种距离的计算方法是否过于草率？
+            # print(vars_pair)
+            # 距离的计算方法为：
+            # 1. 对于每个变量，首先算出他和对应变量的LCS
+            # 2. 算出该变量在所有测试样例中的序列长度和len1
+            # 3. 算出该变量的对应变量在所有测试样例中的序列长度和len2
+            # 4. 这两个变量的距离即为LCS*2/(len1 + len2)
+            # 5. 两份代码的距离即为所有变量的距离之和
+            # 6. 由于聚类算法距离越近就越容易将两个点划进同一类簇，
+            #    故需对上面的得到的距离求反再代入聚类算法
             sum = 0
             for var in vars_pair:
-                sum += vars_pair[var]['value']
+                len1 = variable_sequence_length[i][var]
+                var2 = vars_pair[var]['var']
+                len2 = variable_sequence_length[j][var2]
+                sum += vars_pair[var]['value'] * 2.0 / (len1 + len2)
+                # print(var, ' is', str(vars_pair[var]['value'] * 2.0 / (len1 + len2)))
+                # sum += vars_pair[var]['value']
             dis_matrix[i].append(sum)
             dis_matrix[j].append(sum)
             maxn = max(maxn, sum)
     for i in range(variable_info_list_length):
         for j in range(variable_info_list_length):
             if i != j:
-                dis_matrix[i][j] = maxn - dis_matrix[i][j] + 1
+                dis_matrix[i][j] = maxn - dis_matrix[i][j] + 1 # 加1是人工定义了两份不同的代码距离至少为1
     print(dis_matrix)
     return dis_matrix
 
