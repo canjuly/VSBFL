@@ -3,48 +3,17 @@ import sys
 import util
 import Snooper
 
-##########################
-                         #
-now_pronblem_id = 3310   #
-                         #
-##########################
 
-
-def find_pair(problem_id):
-    '''
-    寻找每份错误代码对应的正确代码
-    '''
-    pair_info = {}
-    dir_path = os.path.join(r'..\data', str(problem_id), 'TAG_py')
-    tag_files = os.listdir(dir_path)
-    for i in tag_files:
-        tag_file = os.path.join(dir_path, i)
-        lines = util.read_file(tag_file)
-        wa_file = lines[0].replace('\n', '')
-        ac_file = lines[1].replace('\n', '')
-        pair_info[wa_file] = ac_file
-    return pair_info
-
-
-def get_sequences(wa_file, ac_file, language):
+def get_sequences(wa_file, ac_file, test_dir_path, language):
     '''
     获取错误程序和正确程序的变量变化序列
     '''
-    # test_dir_path = os.path.join('..\data', str(now_pronblem_id), 'TEST_DATA_TCG1')
-    # wa_file_path = os.path.join('..\data', str(now_pronblem_id), 'WA_py', wa_file)
-    # ac_file_path = os.path.join('..\data', str(now_pronblem_id), 'AC_py', ac_file)
-    test_dir_path = r'test\TEST_DATA_TCG1'
-    # wa_file_path = r'test\wa.py'
-    # ac_file_path = r'test\ac.py'
-    wa_file_path = r'test\wa.cpp'
-    ac_file_path = r'test\ac.cpp'
-    print(wa_file_path, ac_file_path)
     if language == 'py':
-        wa_res = Snooper.get_py_variable_sequence(wa_file_path, test_dir_path)
-        ac_res = Snooper.get_py_variable_sequence(ac_file_path, test_dir_path)
-    elif language == 'cpp':
-        wa_res = Snooper.get_cpp_variable_sequence(wa_file_path, test_dir_path)
-        ac_res = Snooper.get_cpp_variable_sequence(ac_file_path, test_dir_path)
+        wa_res = Snooper.get_py_variable_sequence(wa_file, test_dir_path)
+        ac_res = Snooper.get_py_variable_sequence(ac_file, test_dir_path)
+    elif language == 'cpp' or language == 'c':
+        wa_res = Snooper.get_cpp_variable_sequence(wa_file, test_dir_path)
+        ac_res = Snooper.get_cpp_variable_sequence(ac_file, test_dir_path)
     else:
         wa_res = []
         ac_res = []
@@ -129,15 +98,11 @@ def cal_suspicion(weight, wa_res, ac_res):
 
     return res
 
-def cal_VSBFL_rank(wa_file, language):
+def cal_VSBFL_rank(wa_file, ac_file, test_dir_path, language):
     '''
     根据计算变量怀疑度排名
     '''
-    # pair_info = find_pair(now_pronblem_id)
-    # pair_info = {r'test\wa.py': r'test\ac.py'}
-    pair_info = {r'test\wa.cpp': r'test\ac.cpp'}
-    ac_file = pair_info[wa_file]
-    wa_res, ac_res = get_sequences(wa_file, ac_file, language)
+    wa_res, ac_res = get_sequences(wa_file, ac_file, test_dir_path, language)
     weight = add_weight(wa_res, ac_res)
     VSBFL_suspicion = cal_suspicion(weight, wa_res, ac_res)
     VSBFL_rank = []
@@ -147,31 +112,11 @@ def cal_VSBFL_rank(wa_file, language):
             'value': VSBFL_suspicion[variable]
         })
     VSBFL_rank.sort(key=lambda s:(s['value']), reverse=True)
-    print(VSBFL_rank)
+    # print(VSBFL_rank)
     return VSBFL_suspicion, VSBFL_rank
-
-def save_list(pair_list):
-    '''
-    把变量变化序列保存下来
-    '''
-    for item in pair_list:
-        tmp_str = str(item['wa']) + ' ' + str(item['ac']) + '\n'
-        # print(tmp_str)
-        util.add_file(log_file, tmp_str)
 
 
 if __name__ == "__main__":
     
-    # for wa_file in pair_info:
-    #     ac_file = pair_info[wa_file]
-    #     pair_list = get_sequences(wa_file, ac_file)
-    #     print(pair_list)
-    #     # if len(pair_list) != 0:
-    #     #     save_list(pair_list)
-    #     break
-    # wa_res, ac_res = get_sequences('519155.py', pair_info['519155.py'])
-    # weight = add_weight(wa_res, ac_res)
-    # VSBFL_suspicion = cal_suspicion(weight, wa_res, ac_res)
-    # cal_VSBFL_rank(VSBFL_suspicion)
-    cal_VSBFL_rank(r'test\wa.cpp', 'cpp')
+    cal_VSBFL_rank(r'test\wa.cpp', r'test\ac.cpp', r'test\TEST_DATA_TCG1', 'cpp')
     

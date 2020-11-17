@@ -95,7 +95,7 @@ def cal_variable_sequence_length(variable_info_list):
 
 def prepare_matrix(file_dir_path, test_dir_path):
     '''
-    准备矩阵
+    准备矩阵，第二个返回值是文件列表
     '''
     file_list = os.listdir(file_dir_path)
     variable_info_list = []
@@ -106,7 +106,7 @@ def prepare_matrix(file_dir_path, test_dir_path):
         variable_info_list.append(variable_info)
         print(variable_info)
         cnt += 1
-        if cnt == 2:
+        if cnt == 15:
             break
     variable_sequence_length = cal_variable_sequence_length(variable_info_list)
     # print(variable_sequence_length)
@@ -145,7 +145,14 @@ def prepare_matrix(file_dir_path, test_dir_path):
             if i != j:
                 dis_matrix[i][j] = maxn - dis_matrix[i][j] + 1 # 加1是人工定义了两份不同的代码距离至少为1
     print(dis_matrix)
-    return dis_matrix
+    return dis_matrix, file_list
+
+
+def slice_file_by_cluster(num_clusters, indices):
+    '''
+    依据分类结果进行文件操作
+    '''
+    return 
 
 if __name__ == '__main__':
     
@@ -160,11 +167,12 @@ if __name__ == '__main__':
 
     file_dir_path = r'E:\fault_loc\data\3955\AC_py'
     test_dir_path = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
-    dis_matrix = prepare_matrix(file_dir_path, test_dir_path)
+    dis_matrix, file_list = prepare_matrix(file_dir_path, test_dir_path)
     arr = np.array(dis_matrix)
     r, c = arr.shape
     num_clusters, indices = hierarchy_cluster(arr)
-
+    for i in range(len(indices)):
+        indices[i] = list(map(lambda num: file_list[num], indices[i]))
     print("%d clusters" % num_clusters)
     for k, ind in enumerate(indices):
         print("cluster", k + 1, "is", ind)

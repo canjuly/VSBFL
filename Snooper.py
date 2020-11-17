@@ -147,11 +147,11 @@ def get_cpp_variable_sequence(file_path, test_dir_path):
 
 if __name__ == "__main__":
     
-    # file_path = r'..\data\3310\WA_py\518603.py'
-    # test_dir_path = r'..\data\3310\TEST_DATA_TCG1'
-    # print(get_py_variable_sequence(file_path, test_dir_path))
+    file_path = r'..\data\3310\WA_py\518603.py'
+    test_dir_path = r'..\data\3310\TEST_DATA_TCG1'
+    print(get_py_variable_sequence(file_path, test_dir_path))
 
-    file_path = r'..\data\3955\WA_cpp\541500.cpp'
-    test_dir_path = r'..\data\3955\TEST_DATA_TCG1'
-    get_cpp_variable_sequence(file_path, test_dir_path)
+    # file_path = r'..\data\3955\WA_cpp\541500.cpp'
+    # test_dir_path = r'..\data\3955\TEST_DATA_TCG1'
+    # get_cpp_variable_sequence(file_path, test_dir_path)
     

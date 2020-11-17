@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # src_file_path = r'..\TCG\data\3899\WA_py\498232.py'
     # test_dir_path = r'..\TCG\data\3899\TEST_DATA'
 
-    src_file_path = r'E:\fault_loc\VSFL-TCG\test\wa.cpp'
+    src_file_path = r'E:\fault_loc\VSFL-TCG\test\wa.py'
     test_dir_path = r'E:\fault_loc\VSFL-TCG\test\TEST_DATA_TCG1'
     
     passed_test_num, failed_test_num, lines_passed,  lines_failed = get_python_cov_info(src_file_path, test_dir_path)
