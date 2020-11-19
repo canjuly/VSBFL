@@ -82,12 +82,30 @@ def instrumentation(file_name):
     给源代码插桩
     '''
     variable_list = Parse_ast.get_cpp_variable_name_list(file_name)
+    # print(variable_list)
     # variable_info = collect_variable_info(variable_list, file_name)
     # print(variable_info)
-    lines = util.read_file_by_str(file_name)
-    lines = pyastyle.format(lines, '--style=ansi').split('\n')
-    lines = prepare_lines(lines)
-    lines = pyastyle.format('\n'.join(lines), '--style=ansi').split('\n')
+    lines = util.read_file(file_name)
+    file_type = file_name.split('.')[-1]
+    if file_type == 'c':
+        lines.insert(0, '#include<iostream>\n')
+        for i in range(len(lines)):
+            if lines[i].find('#') != -1 and lines[i].find('include') != -1:
+                if lines[i].find('.h') != -1:
+                    lines[i] = lines[i].replace('<', '<c')
+                    lines[i] = lines[i].replace('.h', '')
+            else:
+                lines.insert(i, 'using namespace std;\n')
+                break
+    for i in range(len(lines)):
+        lines[i] = lines[i].encode('utf-8')
+        # lines[i] = lines[i].decode('utf-8')
+    util.write_file_by_byte(temp_cpp_file, lines)
+    os.system('astyle --style=ansi --add-braces %s' % temp_cpp_file)
+    lines = util.read_file(temp_cpp_file)
+    # lines = pyastyle.format(lines, '--style=ansi --add-braces').split('\n')
+    # lines = prepare_lines(lines)
+    # lines = pyastyle.format('\n'.join(lines), '--style=ansi').split('\n')
     # print(lines)
     # return
     i = 0
@@ -132,12 +150,12 @@ def instrumentation(file_name):
                 i += 1
                 # break
         i += 1
-
-    for i in range(len(lines)):
-        lines[i] = lines[i] + '\n'
-    lines = pyastyle.format(''.join(lines), '--style=ansi')
+        
     # print(lines)
-    util.write_file(temp_cpp_file, lines)
+    for i in range(len(lines)):
+        lines[i] = lines[i].encode('utf-8')
+    util.write_file_by_byte(temp_cpp_file, lines)
+    os.system('astyle --style=ansi %s' % temp_cpp_file)
     return lines
 
 def parse_out(lines):
@@ -181,8 +199,8 @@ def get_cpp_variable_sequence(test_data_file):
 
 if __name__ == "__main__":
     
-    file_name = r'..\data\3955\WA_cpp\541500.cpp'
-    test_data_file = r'..\data\3955\TEST_DATA_TCG1\1.in'
+    file_name = r'E:\fault_loc\data\3955\WA_c\515985.c'
+    test_data_file = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
     lines = instrumentation(file_name)
-    info = get_cpp_variable_sequence(test_data_file)
+    # info = get_cpp_variable_sequence(test_data_file)
     

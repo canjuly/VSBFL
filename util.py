@@ -29,6 +29,13 @@ def write_file(file_name, str):
     with open(file_name, 'w+') as f:
         f.writelines(str)
 
+def write_file_by_byte(file_name, str):
+    '''
+    （创建）以二进制写文件，从头开始，注意接收参数为列表
+    '''
+    with open(file_name, 'wb') as f:
+        f.writelines(str)
+
 def add_file(file_name, str):
     '''
     （创建）追加文件

@@ -6,8 +6,8 @@ import Coverage
 import SBFL_Formular as SF
 import Variable_sus as vs
 
-problem_id = 3955
-res_file = 'res1.out'
+problem_id = 2864
+res_file = 'res_2864.out'
 
 def find_pair(dir_path):
     '''
@@ -56,10 +56,10 @@ def get_SFL_rank(file_path, test_dir_path, language):
     '''
     if language == 'py':
         passed_test_num, failed_test_num, lines_passed,  lines_failed = Coverage.get_python_cov_info(file_path, test_dir_path)
-    elif language == 'cpp':
+    elif language == 'cpp' or 'c':
         passed_test_num, failed_test_num, lines_passed,  lines_failed = Coverage.get_cpp_cov_info(file_path, test_dir_path)
     else:
-        return [], []
+        return [], [], []
     # print(passed_test_num, failed_test_num)
     # print(lines_passed,  lines_failed)
     N_tuple = cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed)
@@ -144,7 +144,7 @@ def run_file(file_path, ac_file, test_dir_path, language):
     # print(variable_info)
     final_rank = cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info)
     print(final_rank)
-    return final_rank
+    return final_rank, VSBFL_rank
 
 def run_dir(file_dir_path, pair_info, test_dir_path):
     '''
@@ -155,24 +155,26 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
         file_type = file.split('.')[-1]
         if file_type == 'c' or file_type == 'cpp' or file_type == 'py':
             wa_file_path = os.path.join(file_dir_path, file)
-            ac_file_path = os.path.join(r'E:\fault_loc\data', str(problem_id), 'AC_'+file_type, pair_info[file])
-            # print(wa_file_path, ac_file_path)
+            ac_file_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem_id), 'AC_'+file_type, pair_info[file])
+            print(wa_file_path, ac_file_path)
             try:
-                final_rank = run_file(wa_file_path, ac_file_path, test_dir_path, file_type)
-                util.add_file(res_file, file + '    ' + str(final_rank) + '\n')
-            except:
+                final_rank, VSBFL_rank = run_file(wa_file_path, ac_file_path, test_dir_path, file_type)
+                util.add_file(res_file, file + '    ' + str(final_rank) + '    ' + str(VSBFL_rank) + '\n')
+            except Exception:
+                print(Exception)
                 util.add_file(res_file, file + '    ' + 'contains error\n')
+        # break
     return
 
 
 if __name__ == "__main__":
 
-    pair_info = find_pair(r'E:\fault_loc\data\3955\TAG_py')
-    # file_path = r'E:\fault_loc\data\3955\WA_py\508560.py'
-    # ac_file = os.path.join(r'E:\fault_loc\data\3955\AC_py', pair_info['508560.py'])
-    # test_dir_path = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
-    # run_file(file_path, ac_file, test_dir_path, 'py')
+    pair_info = find_pair(r'E:\fault_loc\ITSP-data\2864\Tag_c')
+    # file_path = r'E:\fault_loc\ITSP-data\2864\WA_c\277497_buggy.c'
+    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2864\AC_c', pair_info['277497_buggy.c'])
+    # test_dir_path = r'E:\fault_loc\ITSP-data\2864\TEST_DATA_TCG1'
+    # run_file(file_path, ac_file, test_dir_path, 'c')
 
-    file_path = r'E:\fault_loc\data\3955\WA_py'
-    test_dir_path = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
-    run_dir(file_path, pair_info, test_dir_path)
+    dir_path = r'E:\fault_loc\ITSP-data\2864\WA_c'
+    test_dir_path = r'E:\fault_loc\ITSP-data\2864\TEST_DATA_TCG1'
+    run_dir(dir_path, pair_info, test_dir_path)
