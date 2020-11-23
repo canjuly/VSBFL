@@ -6,8 +6,8 @@ import Coverage
 import SBFL_Formular as SF
 import Variable_sus as vs
 
-problem_id = 2864
-res_file = 'res_2864.out'
+problem_id = 2867
+res_file = 'res_2867.out'
 
 def find_pair(dir_path):
     '''
@@ -169,12 +169,12 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
 
 if __name__ == "__main__":
 
-    pair_info = find_pair(r'E:\fault_loc\ITSP-data\2864\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2864\WA_c\277497_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2864\AC_c', pair_info['277497_buggy.c'])
-    # test_dir_path = r'E:\fault_loc\ITSP-data\2864\TEST_DATA_TCG1'
+    pair_info = find_pair(r'E:\fault_loc\ITSP-data\2867\Tag_c')
+    # file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277924_buggy.c'
+    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277924_buggy.c'])
+    # test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
     # run_file(file_path, ac_file, test_dir_path, 'c')
 
-    dir_path = r'E:\fault_loc\ITSP-data\2864\WA_c'
-    test_dir_path = r'E:\fault_loc\ITSP-data\2864\TEST_DATA_TCG1'
+    dir_path = r'E:\fault_loc\ITSP-data\2867\WA_c'
+    test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
     run_dir(dir_path, pair_info, test_dir_path)

@@ -73,7 +73,7 @@ def cal_suspicion(weight, wa_res, ac_res):
     计算错误代码中各变量的怀疑度值
     '''
     vars_pair = util.cal_KM(weight) #二分图最大完备匹配
-    # print(vars_pair)
+    print(vars_pair)
     vars_len = {}
     for i in range(len(wa_res)):
         wa_item = wa_res[i]
@@ -96,7 +96,7 @@ def cal_suspicion(weight, wa_res, ac_res):
         if vars_len[var] == 0:
             vars_len[var] = 2
         res[var] = 1 - vars_pair[var]['value'] / (vars_len[var] / 2)
-    # print(res)
+    print(res)
 
     return res
 

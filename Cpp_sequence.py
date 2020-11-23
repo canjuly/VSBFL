@@ -77,6 +77,48 @@ def prepare_lines(lines):
         i += 1
     return lines
 
+def extract_variable(line, operator):
+    '''
+    '''
+    # line = list(line)
+    var_list = []
+    if operator == 'scanf' or operator == 'cin':
+        pass
+    elif operator == '=':
+        while line.find(operator) != -1:
+            var = ''
+            pos = line.find(operator)
+            pos -= 1
+            while is_operator(line[pos]):
+                pos -= 1
+            while not is_operator(line[pos]):
+                var = line[pos] + var
+                pos -= 1
+            var_list.append(var)
+            line = line[:pos] + line[pos+1:]
+    elif operator == '++' or operator == '--':
+        while line.find(operator) != -1:    
+            var = ''
+            r_pos = line.find(operator)
+            pos = r_pos - 1
+            while line[pos] == ' ':
+                pos -= 1
+            if not is_operator(line[pos]):
+                while not is_operator(line[pos]):
+                    var = line[pos] + var
+                    pos -= 1
+            else:
+                pos = r_pos + 2
+                while line[pos] == ' ':
+                    pos += 1
+                while not is_operator(line[pos]):
+                    var += line[pos]
+                    pos += 1
+            var_list.append(var)
+            line = line[:r_pos] + line[r_pos+2:] 
+    return var_list
+
+
 def instrumentation(file_name):
     '''
     给源代码插桩
@@ -113,17 +155,41 @@ def instrumentation(file_name):
         # print(i)
         flag = False
         tmp_str = ''
+        var_set = []
         # 只有含有等号、输入的语句才会改变变量的值吧
-        if lines[i].find('=') >= 0 or find_pos('scanf', lines[i]) or find_pos('cin', lines[i]): 
+        if find_pos('scanf', lines[i]) or find_pos('cin', lines[i]): 
             for vars in variable_list:
                 if find_pos(vars, lines[i]):
-                
                     flag = True
-                    tmp_str += 'cout << endl << '
-                    tmp_str += '"' + vars + ' now is " << ' + vars + ' << endl;'
-                    tmp_str += '\n'
-       
-       
+                    if vars not in var_set:
+                        var_set.append(vars)
+        if lines[i].find('++') != -1: 
+            # print(extract_variable(lines[i], '++'))
+            for vars in variable_list:
+                if vars in extract_variable(lines[i], '++') and find_pos(vars, lines[i]):
+                    flag = True
+                    if vars not in var_set:
+                        var_set.append(vars)
+        if lines[i].find('--') != -1: 
+            # print(extract_variable(lines[i], '--'))
+            for vars in variable_list:
+                if vars in extract_variable(lines[i], '--') and find_pos(vars, lines[i]):
+                    flag = True
+                    if vars not in var_set:
+                        var_set.append(vars)
+        if lines[i].find('=') != -1: 
+            if lines[i].find('<=') == -1 and lines[i].find('>=') == -1 and lines[i].find('!=') == -1 and lines[i].find('==') == -1:
+                # print(extract_variable(lines[i], '='))
+                for vars in variable_list:
+                    if vars in extract_variable(lines[i], '=') and find_pos(vars, lines[i]):
+                        flag = True
+                        if vars not in var_set:
+                            var_set.append(vars)
+        for vars in var_set:
+            tmp_str += 'cout << endl << '
+            tmp_str += '"' + vars + ' now is " << ' + vars + ' << endl;'
+            tmp_str += '\n'
+
         if flag:
             if lines[i].find('(') >= 0 and lines[i].find(')') >= 0:
                 # print('now is: ' + lines[i])
@@ -174,8 +240,11 @@ def parse_out(lines):
             value = line[st_pos: len(line)]
             if variable not in info:
                 info[variable] = []
-            else:
-                info[variable].append(value)
+            info[variable].append(value)
+            # if len(info[variable]) == 0:
+            #     info[variable].append(value)
+            # elif info[variable][-1] != value:
+                # info[variable].append(value)
     return info
 
 def get_cpp_variable_sequence(test_data_file):
@@ -199,8 +268,8 @@ def get_cpp_variable_sequence(test_data_file):
 
 if __name__ == "__main__":
     
-    file_name = r'E:\fault_loc\data\3955\WA_c\515985.c'
-    test_data_file = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
+    file_name = r'E:\fault_loc\ITSP-data\2867\WA_c\277924_buggy.c'
+    test_data_file = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
     lines = instrumentation(file_name)
     # info = get_cpp_variable_sequence(test_data_file)
     
