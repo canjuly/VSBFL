@@ -45,8 +45,8 @@ def add_weight(wa_res, ac_res):
         wa_item = wa_res[i]
         ac_item = ac_res[i]
         res = wa_item['res']
-        if res == True:
-            continue
+        # if res == True:
+        #     continue
         wa_info = wa_item['info']
         ac_info = ac_item['info']
         # wa_vars = list(wa_info.keys())
@@ -73,14 +73,14 @@ def cal_suspicion(weight, wa_res, ac_res):
     计算错误代码中各变量的怀疑度值
     '''
     vars_pair = util.cal_KM(weight) #二分图最大完备匹配
-    print(vars_pair)
+    # print(vars_pair)
     vars_len = {}
     for i in range(len(wa_res)):
         wa_item = wa_res[i]
         ac_item = ac_res[i]
         res = wa_item['res']
-        if res == True:
-            continue
+        # if res == True:
+        #     continue
         wa_info = wa_item['info']
         ac_info = ac_item['info']
         for var in vars_pair:
@@ -91,6 +91,7 @@ def cal_suspicion(weight, wa_res, ac_res):
                 vars_len[var] += len(wa_info[var])
             if vars_pair[var]['var'] in ac_info:
                 vars_len[var] += len(ac_info[vars_pair[var]['var']])
+    # print(vars_len)
     res = {}
     for var in vars_len:
         if vars_len[var] == 0:

@@ -78,6 +78,8 @@ def cal_turantula(Ncf, Nuf, Ncp, Nup):
         return 0
     a = Ncf / (Ncf + Nuf)
     b = Ncp / (Ncp + Nup)
+    if a + b == 0:
+        return 0
     c = a / (a + b)
     return c
 

@@ -3,11 +3,12 @@ import sys
 import util
 import Parse_ast
 import Coverage
+import openpyxl
 import SBFL_Formular as SF
 import Variable_sus as vs
 
 problem_id = 2867
-res_file = 'res_2867.out'
+res_file = r'result\res_2867.xlsx'
 
 def find_pair(dir_path):
     '''
@@ -37,8 +38,8 @@ def cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed):
         Nuf = failed_test_num - lines_failed[i]
         Ncp = lines_passed[i]
         Nup = passed_test_num - lines_passed[i]
-        # Tarantula = SF.cal_turantula(Ncf, Nuf, Ncp, Nup)
-        Jaccard = SF.cal_jaccard(Ncf, Nuf, Ncp, Nup)
+        Tarantula = SF.cal_turantula(Ncf, Nuf, Ncp, Nup)
+        # Jaccard = SF.cal_jaccard(Ncf, Nuf, Ncp, Nup)
         # Naish = SF.cal_naish(Ncf, Nuf, Ncp, Nup)
         # GP08 = SF.cal_GP08(Ncf, Nuf, Ncp, Nup)
         # GP10 = SF.cal_GP10(Ncf, Nuf, Ncp, Nup)
@@ -47,7 +48,7 @@ def cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed):
         # GP20 = SF.cal_GP20(Ncf, Nuf, Ncp, Nup)
         # GP26 = SF.cal_GP26(Ncf, Nuf, Ncp, Nup)
         # print(i, Jaccard)
-        N_tuple.append(Jaccard)
+        N_tuple.append(Tarantula)
     return N_tuple  #返回值没有第0行
 
 def get_SFL_rank(file_path, test_dir_path, language):
@@ -87,30 +88,61 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     final_rank = []
 
     # 新的排序方法
+    # coefficient_list = []
+    # final_rank_t = []
+    # VSBFL_dic = {}
+    # for item in VSBFL_rank:
+    #     VSBFL_dic[item['name']] = item['value']
+    # for i in range(len(variable_info)):
+    #     coefficient = 0
+    #     for variable in variable_info[i]:
+    #         coefficient += VSBFL_dic[variable]
+    #     if len(variable_info[i]) != 0:
+    #         coefficient = 1 + coefficient / len(variable_info[i])
+    #     else:
+    #         coefficient = 1.0
+    #     coefficient_list.append(coefficient)
+    # for i in range(len(N_tuple)):
+    #     final_rank_t.append({
+    #         'no': i + 1,
+    #         'pos': N_tuple[i] * coefficient_list[i]
+    #     })
+    # print(final_rank_t)
+    # final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
+    # for i in final_rank_t:
+    #     final_rank.append(i['no'])
+
+    # 新的排序方法2
     coefficient_list = []
     final_rank_t = []
     VSBFL_dic = {}
     for item in VSBFL_rank:
         VSBFL_dic[item['name']] = item['value']
+    # print(N_tuple)
     for i in range(len(variable_info)):
-        coefficient = 0
+        coefficient = 1.0
         for variable in variable_info[i]:
-            coefficient += VSBFL_dic[variable]
-        if len(variable_info[i]) != 0:
-            coefficient = 1 + coefficient / len(variable_info[i])
-        else:
-            coefficient = 1.0
+            coefficient = coefficient * (1 + VSBFL_dic[variable])
+        # if len(variable_info[i]) != 0:
+        #     coefficient = 1 + coefficient / len(variable_info[i])
+        # else:
+        #     coefficient = 1.0
         coefficient_list.append(coefficient)
     for i in range(len(N_tuple)):
         final_rank_t.append({
             'no': i + 1,
-            'pos': N_tuple[i] * coefficient_list[i]
+            'pos': (1.0 + N_tuple[i]) * coefficient_list[i]
         })
+    # print(final_rank_t)
     final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
-    for i in final_rank_t:
-        final_rank.append(i['no'])
-
-
+    tmp_list = []
+    for i in range(len(final_rank_t)):
+        if i != 0 and abs(final_rank_t[i]['pos'] - final_rank_t[i-1]['pos']) > 0.0001:
+            final_rank.append(tmp_list)
+            tmp_list = []
+        tmp_list.append(final_rank_t[i]['no'])
+    if len(tmp_list) != 0:
+        final_rank.append(tmp_list)
     # 旧的排序方法
     # for item in VSBFL_rank:
     #     variable = item['name']
@@ -151,27 +183,33 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
     计算某个文件夹内所有文件的最后怀疑度列表
     '''
     file_list = os.listdir(file_dir_path)
+    wb = openpyxl.Workbook()
+    ws = wb.worksheets[0]
+    ws.append({'a':'name', 'b':'suspicion', 'c':'variable_suspicion'})
     for file in file_list:
         file_type = file.split('.')[-1]
         if file_type == 'c' or file_type == 'cpp' or file_type == 'py':
             wa_file_path = os.path.join(file_dir_path, file)
             ac_file_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem_id), 'AC_'+file_type, pair_info[file])
-            print(wa_file_path, ac_file_path)
+            # print(wa_file_path, ac_file_path)
             try:
                 final_rank, VSBFL_rank = run_file(wa_file_path, ac_file_path, test_dir_path, file_type)
-                util.add_file(res_file, file + '    ' + str(final_rank) + '    ' + str(VSBFL_rank) + '\n')
+                ws.append({'a':file, 'b':str(final_rank), 'c':str(VSBFL_rank)})
+                # util.add_file(res_file, file + '    ' + str(final_rank) + '    ' + str(VSBFL_rank) + '\n')
             except Exception:
                 print(Exception)
-                util.add_file(res_file, file + '    ' + 'contains error\n')
+                ws.append({'a':file, 'b':'[]', 'c':'[]'})
+                # util.add_file(res_file, file + '    ' + 'contains error\n')
         # break
+    wb.save(res_file)
     return
 
 
 if __name__ == "__main__":
 
     pair_info = find_pair(r'E:\fault_loc\ITSP-data\2867\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277924_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277924_buggy.c'])
+    # file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277943_buggy.c'
+    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277943_buggy.c'])
     # test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
     # run_file(file_path, ac_file, test_dir_path, 'c')
 
