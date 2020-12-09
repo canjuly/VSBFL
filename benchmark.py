@@ -208,11 +208,11 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
 if __name__ == "__main__":
 
     pair_info = find_pair(r'E:\fault_loc\ITSP-data\2867\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277943_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277943_buggy.c'])
-    # test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
-    # run_file(file_path, ac_file, test_dir_path, 'c')
-
-    dir_path = r'E:\fault_loc\ITSP-data\2867\WA_c'
+    file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277943_buggy.c'
+    ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277943_buggy.c'])
     test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
-    run_dir(dir_path, pair_info, test_dir_path)
+    run_file(file_path, ac_file, test_dir_path, 'c')
+
+    # dir_path = r'E:\fault_loc\ITSP-data\2867\WA_c'
+    # test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
+    # run_dir(dir_path, pair_info, test_dir_path)

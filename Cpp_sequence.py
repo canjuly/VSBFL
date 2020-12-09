@@ -26,7 +26,7 @@ def is_operator(ch):
     '''
     op_list = '!@#$%^&*()+{}|:\"<>?`-=[]\\;\',./ '
     # print(op_list)
-    if op_list.find(ch) != -1:
+    if op_list.find(ch) >= 0:
         return True
     else:
         return False
@@ -79,23 +79,29 @@ def prepare_lines(lines):
 
 def extract_variable(line, operator):
     '''
+    找出某一行中包含的变量
     '''
     # line = list(line)
     var_list = []
     if operator == 'scanf' or operator == 'cin':
         pass
     elif operator == '=':
+        line = line.replace('\n', '').replace(' ', '')
+        # print(line)
         while line.find(operator) != -1:
             var = ''
-            pos = line.find(operator)
-            pos -= 1
+            r_pos = line.find(operator)
+            if line[r_pos - 1] == '=' or line[r_pos - 1] == '<' or line[r_pos - 1] == '>' or line[r_pos - 1] == '!':
+                line = line[r_pos+1:]
+                continue
+            pos = r_pos - 1
             while is_operator(line[pos]):
                 pos -= 1
             while not is_operator(line[pos]):
                 var = line[pos] + var
                 pos -= 1
             var_list.append(var)
-            line = line[:pos] + line[pos+1:]
+            line = line[r_pos+1:]
     elif operator == '++' or operator == '--':
         while line.find(operator) != -1:    
             var = ''
@@ -152,12 +158,13 @@ def instrumentation(file_name):
     # return
     i = 0
     while i < len(lines):
-        # print(i)
+        # print(lines[i])
         flag = False
         tmp_str = ''
         var_set = []
         # 只有含有等号、输入的语句才会改变变量的值吧
         if find_pos('scanf', lines[i]) or find_pos('cin', lines[i]): 
+            # print(extract_variable(lines[i], 'scanf'))
             for vars in variable_list:
                 if find_pos(vars, lines[i]):
                     flag = True
@@ -178,13 +185,14 @@ def instrumentation(file_name):
                     if vars not in var_set:
                         var_set.append(vars)
         if lines[i].find('=') != -1: 
-            if lines[i].find('<=') == -1 and lines[i].find('>=') == -1 and lines[i].find('!=') == -1 and lines[i].find('==') == -1:
-                # print(extract_variable(lines[i], '='))
-                for vars in variable_list:
-                    if vars in extract_variable(lines[i], '=') and find_pos(vars, lines[i]):
-                        flag = True
-                        if vars not in var_set:
-                            var_set.append(vars)
+            # print(lines[i])
+            # if lines[i].find('<=') == -1 and lines[i].find('>=') == -1 and lines[i].find('!=') == -1 and lines[i].find('==') == -1:
+            # print(extract_variable(lines[i], '='))
+            for vars in variable_list:
+                if vars in extract_variable(lines[i], '=') and find_pos(vars, lines[i]):
+                    flag = True
+                    if vars not in var_set:
+                        var_set.append(vars)
         for vars in var_set:
             tmp_str += 'cout << endl << '
             tmp_str += '"' + vars + ' now is " << ' + vars + ' << endl;'
@@ -268,7 +276,7 @@ def get_cpp_variable_sequence(test_data_file):
 
 if __name__ == "__main__":
     
-    file_name = r'E:\fault_loc\ITSP-data\2867\WA_c\277924_buggy.c'
+    file_name = r'E:\fault_loc\ITSP-data\2867\AC_c\277912_correct.c'
     test_data_file = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
     lines = instrumentation(file_name)
     # info = get_cpp_variable_sequence(test_data_file)

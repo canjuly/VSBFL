@@ -28,8 +28,6 @@ def hierarchy_cluster(data, method='average', threshold=5.0):
  
     return num_clusters, indices
  
- 
- 
 def get_cluster_indices(cluster_assignments):
     '''映射每一类至原数据索引
     
@@ -79,19 +77,16 @@ def cal_variable_sequence_length(variable_info_list):
     '''
     计算各变量在每个测试样例下的序列长度之和
     '''
-    res_list = []
-    for item in variable_info_list:
-        tmp_dic = {}
-        for i in item:
-            variable_info = i['info']
-            for var in variable_info:
-                # vars_len[var] = len(wa_info[var]) + len(ac_info[vars_pair[var]['var']])
-                if var not in tmp_dic:
-                    tmp_dic[var] = len(variable_info[var])
-                else:
-                    tmp_dic[var] += len(variable_info[var])
-        res_list.append(tmp_dic)
-    return res_list
+    res_dict = {}
+    for i in variable_info_list:
+        variable_info = i['info']
+        for var in variable_info:
+            # vars_len[var] = len(wa_info[var]) + len(ac_info[vars_pair[var]['var']])
+            if var not in res_dict:
+                res_dict[var] = len(variable_info[var])
+            else:
+                res_dict[var] += len(variable_info[var])
+    return res_dict
 
 def prepare_matrix(file_dir_path, test_dir_path):
     '''
@@ -108,7 +103,9 @@ def prepare_matrix(file_dir_path, test_dir_path):
         cnt += 1
         if cnt == 15:
             break
-    variable_sequence_length = cal_variable_sequence_length(variable_info_list)
+    variable_sequence_length = []
+    for i in variable_info_list:
+        variable_sequence_length.append(cal_variable_sequence_length(i))
     # print(variable_sequence_length)
     variable_info_list_length = len(variable_info_list)
     dis_matrix = []
@@ -154,6 +151,62 @@ def slice_file_by_cluster(num_clusters, indices):
     '''
     return 
 
+def find_similar_ac_file(wa_res, ac_res_dir):
+    '''
+    寻找和错误代码相似的正确代码
+    '''
+    wa_variable_length = cal_variable_sequence_length(wa_res)
+    ac_file_list = os.listdir(ac_res_dir)
+    res_file = []
+    maxn = 0
+    for ac_file in ac_file_list:
+        ac_file_path = os.path.join(ac_res_dir, ac_file)
+        ac_res = eval(util.read_file(ac_file_path)[0])
+        ac_variable_length = cal_variable_sequence_length(ac_res)
+        print(ac_file, end='\t')
+        # print(ac_res)
+        # print(wa_variable_length)
+        # print(ac_variable_length)
+        weight = add_weight(wa_res, ac_res)
+        vars_pair = util.cal_KM(weight)
+        # print(vars_pair)
+        sum = 0
+        for var in vars_pair:
+            len1 = wa_variable_length[var]
+            var2 = vars_pair[var]['var']
+            len2 = ac_variable_length[var2]
+            sum += vars_pair[var]['value'] * 2.0 / (len1 + len2)
+        print(sum)
+        if abs(sum - maxn) < 0.00001:
+            res_file.append(ac_file)
+        elif sum > maxn:
+            maxn = sum
+            res_file = [ac_file]
+        # break
+    # print(res_file)
+    return res_file
+
+def get_ac_res(ac_dir, test_dir_path, res_dir):
+    '''
+    将正确代码的变量变化序列记录下来，以便后期匹配
+    '''
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    ac_file_list = os.listdir(ac_dir)
+    for ac_file in ac_file_list:
+        ac_file_path = os.path.join(ac_dir, ac_file)
+        file_type = ac_file.split('.')[-1]
+        print(ac_file)
+        if file_type == 'cpp' or file_type == 'c':
+            variable_info = Snooper.get_cpp_variable_sequence(ac_file_path, test_dir_path)
+        elif file_type == 'py':
+            variable_info = Snooper.get_py_variable_sequence(ac_file_path, test_dir_path)
+        print(variable_info)
+        res_file = os.path.join(res_dir, ac_file.split('.')[0] + '.out')
+        util.write_file(res_file, str(variable_info))
+        # break
+    return
+
 if __name__ == '__main__':
     
     # arr = [[0., 21.6, 22.6, 63.9, 65.1, 17.7, 99.2],
@@ -165,14 +218,21 @@ if __name__ == '__main__':
     # [99.2, 77.6, 76.6, 35.3, 34.1, 81.5, 0.]]
     
 
-    file_dir_path = r'E:\fault_loc\data\3955\AC_py'
-    test_dir_path = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
-    dis_matrix, file_list = prepare_matrix(file_dir_path, test_dir_path)
-    arr = np.array(dis_matrix)
-    r, c = arr.shape
-    num_clusters, indices = hierarchy_cluster(arr)
-    for i in range(len(indices)):
-        indices[i] = list(map(lambda num: file_list[num], indices[i]))
-    print("%d clusters" % num_clusters)
-    for k, ind in enumerate(indices):
-        print("cluster", k + 1, "is", ind)
+    # file_dir_path = r'E:\fault_loc\data\3955\AC_py'
+    # test_dir_path = r'E:\fault_loc\data\3955\TEST_DATA_TCG1'
+    # dis_matrix, file_list = prepare_matrix(file_dir_path, test_dir_path)
+    # arr = np.array(dis_matrix)
+    # r, c = arr.shape
+    # num_clusters, indices = hierarchy_cluster(arr)
+    # for i in range(len(indices)):
+    #     indices[i] = list(map(lambda num: file_list[num], indices[i]))
+    # print("%d clusters" % num_clusters)
+    # for k, ind in enumerate(indices):
+    #     print("cluster", k + 1, "is", ind)
+
+    ac_dir = r'E:\fault_loc\ITSP-data\2867\AC_c'
+    test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
+    ac_res_dir = r'E:\fault_loc\ITSP-data\2867\Res_c'
+    # get_ac_res(ac_dir, test_dir_path, ac_res_dir)
+    wa_res = [{'res': False, 'info': {'sum': ['0', '1'], 'n': ['2'], 'i': ['1']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10'], 'n': ['4'], 'i': ['1', '2', '3']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10', '20', '35', '56', '84', '120', '165'], 'n': ['10'], 'i': ['1', '2', '3', '4', '5', '6', '7', '8', '9']}}, {'res': False, 'info': {'sum': ['0', '1', '4'], 'n': ['3'], 'i': ['1', '2']}}, {'res': False, 'info': {'sum': ['0'], 'n': ['1']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10', '20', '35', '56', '84', '120', '165', '220', '286', '364', '455', '560', '680', '816', '969', '1140', '1330'], 'n': ['20'], 'i': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']}}]
+    res_file = find_similar_ac_file(wa_res, ac_res_dir)
