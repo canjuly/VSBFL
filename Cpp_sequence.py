@@ -84,15 +84,27 @@ def extract_variable(line, operator):
     # line = list(line)
     var_list = []
     if operator == 'scanf' or operator == 'cin':
-        pass
+        line = line.replace('\n', '').replace(' ', '')
+        while line.find('&') != -1:   # 这里处理也不太好，万一碰到输入字符串数组，不就直接gg
+            var = ''
+            r_pos = line.find('&')
+            pos = r_pos + 1
+            while not is_operator(line[pos]):
+                var = var + line[pos]
+                pos += 1
+            var_list.append(var)
+            line = line[r_pos+1:]
     elif operator == '=':
         line = line.replace('\n', '').replace(' ', '')
         # print(line)
         while line.find(operator) != -1:
             var = ''
             r_pos = line.find(operator)
-            if line[r_pos - 1] == '=' or line[r_pos - 1] == '<' or line[r_pos - 1] == '>' or line[r_pos - 1] == '!':
+            if line[r_pos - 1] == '<' or line[r_pos - 1] == '>' or line[r_pos - 1] == '!':
                 line = line[r_pos+1:]
+                continue
+            if line[r_pos + 1] == '=' :
+                line = line[r_pos+2:]
                 continue
             pos = r_pos - 1
             while is_operator(line[pos]):
@@ -163,10 +175,10 @@ def instrumentation(file_name):
         tmp_str = ''
         var_set = []
         # 只有含有等号、输入的语句才会改变变量的值吧
-        if find_pos('scanf', lines[i]) or find_pos('cin', lines[i]): 
+        if find_pos('scanf', lines[i]) or find_pos('cin', lines[i]):  # 其实这里cin没有处理，以后再说
             # print(extract_variable(lines[i], 'scanf'))
             for vars in variable_list:
-                if find_pos(vars, lines[i]):
+                if vars in extract_variable(lines[i], 'scanf') and find_pos(vars, lines[i]):
                     flag = True
                     if vars not in var_set:
                         var_set.append(vars)
@@ -276,8 +288,8 @@ def get_cpp_variable_sequence(test_data_file):
 
 if __name__ == "__main__":
     
-    file_name = r'E:\fault_loc\ITSP-data\2867\AC_c\277912_correct.c'
-    test_data_file = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
+    file_name = r'E:\fault_loc\ITSP-data\2870\WA_c\278304_buggy.c'
+    test_data_file = r'E:\fault_loc\ITSP-data\2870\TEST_DATA_TCG1'
     lines = instrumentation(file_name)
     # info = get_cpp_variable_sequence(test_data_file)
     

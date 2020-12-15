@@ -2,8 +2,32 @@ import os
 import Snooper
 import util
 import numpy as np
+import openpyxl
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from matplotlib import pyplot as plt
+
+cluster_file = r'result\cluster.xlsx'
+
+def get_ac_res(ac_dir, test_dir_path, res_dir):
+    '''
+    将正确代码的变量变化序列记录下来，以便后期匹配
+    '''
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    ac_file_list = os.listdir(ac_dir)
+    for ac_file in ac_file_list:
+        ac_file_path = os.path.join(ac_dir, ac_file)
+        file_type = ac_file.split('.')[-1]
+        print(ac_file)
+        if file_type == 'cpp' or file_type == 'c':
+            variable_info = Snooper.get_cpp_variable_sequence(ac_file_path, test_dir_path)
+        elif file_type == 'py':
+            variable_info = Snooper.get_py_variable_sequence(ac_file_path, test_dir_path)
+        print(variable_info)
+        res_file = os.path.join(res_dir, ac_file.split('.')[0] + '.out')
+        util.write_file(res_file, str(variable_info))
+        # break
+    return
  
 def hierarchy_cluster(data, method='average', threshold=5.0):
     '''层次聚类
@@ -50,26 +74,35 @@ def add_weight(res1, res2):
     计算错误代码中的变量和正确代码变量的边权重
     '''
     weight = {}
+    var_list1 = []
+    var_list2 = []
     for i in range(len(res1)):
         item1 = res1[i]
         item2 = res2[i]
         info1 = item1['info']
         info2 = item2['info']
-        # wa_vars = list(wa_info.keys())
-        # ac_vars = list(ac_info.keys())
         for vars1 in info1:
             list1 = info1[vars1]
-            if vars1 not in weight:
+            if vars1 not in var_list1:
+                var_list1.append(vars1)
                 weight[vars1] = {}
-            
+
             for vars2 in info2:
                 list2 = info2[vars2]
+                if vars2 not in var_list2:
+                    var_list2.append(vars2)
+
                 LCS = util.cal_LCS(list1, list2)
+                # print(vars1, vars2, LCS)
                 if vars2 not in weight[vars1]:
                     weight[vars1][vars2] = LCS
                 else:
                     weight[vars1][vars2] += LCS
         # break
+    for vars1 in var_list1:
+        for vars2 in var_list2:
+            if vars2 not in weight[vars1]:
+                weight[vars1][vars2] = 0
     # print(weight)
     return weight
 
@@ -158,16 +191,18 @@ def find_similar_ac_file(wa_res, ac_res_dir):
     wa_variable_length = cal_variable_sequence_length(wa_res)
     ac_file_list = os.listdir(ac_res_dir)
     res_file = []
+    res_list = []
     maxn = 0
     for ac_file in ac_file_list:
         ac_file_path = os.path.join(ac_res_dir, ac_file)
         ac_res = eval(util.read_file(ac_file_path)[0])
         ac_variable_length = cal_variable_sequence_length(ac_res)
-        print(ac_file, end='\t')
+        # print(ac_file, end='\t')
         # print(ac_res)
         # print(wa_variable_length)
         # print(ac_variable_length)
         weight = add_weight(wa_res, ac_res)
+        # print(weight)
         vars_pair = util.cal_KM(weight)
         # print(vars_pair)
         sum = 0
@@ -176,36 +211,46 @@ def find_similar_ac_file(wa_res, ac_res_dir):
             var2 = vars_pair[var]['var']
             len2 = ac_variable_length[var2]
             sum += vars_pair[var]['value'] * 2.0 / (len1 + len2)
-        print(sum)
-        if abs(sum - maxn) < 0.00001:
+        # print(sum)
+        res_list.append({
+            'file': ac_file,
+            'sum': sum
+        })
+        if abs(sum - maxn) < 0.001:
             res_file.append(ac_file)
         elif sum > maxn:
             maxn = sum
             res_file = [ac_file]
         # break
     # print(res_file)
-    return res_file
+    return res_file, res_list
 
-def get_ac_res(ac_dir, test_dir_path, res_dir):
+def run_dir(wa_dir, ac_res_dir, test_dir_path):
     '''
-    将正确代码的变量变化序列记录下来，以便后期匹配
+    获取某个文件夹内所有文件的匹配的相似正确代码
     '''
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
-    ac_file_list = os.listdir(ac_dir)
-    for ac_file in ac_file_list:
-        ac_file_path = os.path.join(ac_dir, ac_file)
-        file_type = ac_file.split('.')[-1]
-        print(ac_file)
-        if file_type == 'cpp' or file_type == 'c':
-            variable_info = Snooper.get_cpp_variable_sequence(ac_file_path, test_dir_path)
-        elif file_type == 'py':
-            variable_info = Snooper.get_py_variable_sequence(ac_file_path, test_dir_path)
-        print(variable_info)
-        res_file = os.path.join(res_dir, ac_file.split('.')[0] + '.out')
-        util.write_file(res_file, str(variable_info))
-        # break
-    return
+    wa_list = os.listdir(wa_dir)
+    wb = openpyxl.load_workbook(cluster_file)
+    problem_id = wa_dir.split('\\')[-2]
+    wb.create_sheet(problem_id)
+    ws = wb[problem_id]
+    ws.append({'a':'wa_code', 'b':'ac_code', 'c':'similarity'})
+    for wa_file in wa_list:
+        wa_file_path = os.path.join(wa_dir, wa_file)
+        print(wa_file)
+        wa_res = Snooper.get_cpp_variable_sequence(wa_file_path, test_dir_path)
+        # print(wa_res)
+        # return
+        res_file, res_list = find_similar_ac_file(wa_res, ac_res_dir)
+        print(res_file)
+        for i, item in enumerate(res_list):
+            if i == 0:
+                ws.append({'a':wa_file, 'b':item['file'], 'c':item['sum']})
+            else:
+                ws.append({'b':item['file'], 'c':item['sum']})
+        ws.append({'b':str(res_file)})
+    wb.save(cluster_file)
+    return 
 
 if __name__ == '__main__':
     
@@ -230,9 +275,17 @@ if __name__ == '__main__':
     # for k, ind in enumerate(indices):
     #     print("cluster", k + 1, "is", ind)
 
-    ac_dir = r'E:\fault_loc\ITSP-data\2867\AC_c'
-    test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
-    ac_res_dir = r'E:\fault_loc\ITSP-data\2867\Res_c'
-    # get_ac_res(ac_dir, test_dir_path, ac_res_dir)
-    wa_res = [{'res': False, 'info': {'sum': ['0', '1'], 'n': ['2'], 'i': ['1']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10'], 'n': ['4'], 'i': ['1', '2', '3']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10', '20', '35', '56', '84', '120', '165'], 'n': ['10'], 'i': ['1', '2', '3', '4', '5', '6', '7', '8', '9']}}, {'res': False, 'info': {'sum': ['0', '1', '4'], 'n': ['3'], 'i': ['1', '2']}}, {'res': False, 'info': {'sum': ['0'], 'n': ['1']}}, {'res': False, 'info': {'sum': ['0', '1', '4', '10', '20', '35', '56', '84', '120', '165', '220', '286', '364', '455', '560', '680', '816', '969', '1140', '1330'], 'n': ['20'], 'i': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']}}]
-    res_file = find_similar_ac_file(wa_res, ac_res_dir)
+    problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]
+    for problem in problem_list:
+        problem = 2871
+        # print(problem)
+        ac_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'AC_c')
+        test_dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
+        ac_res_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'Res_c')
+        wa_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'WA_c')
+        # get_ac_res(ac_dir, test_dir_path, ac_res_dir)
+        run_dir(wa_dir, ac_res_dir, test_dir_path)
+        break
+    # res1 = Snooper.get_cpp_variable_sequence(r'E:\fault_loc\ITSP-data\2871\WA_c\278419_buggy.c', r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1')
+    # res2 = eval(util.read_file(r'E:\fault_loc\ITSP-data\2871\Res_c\278461_correct.out')[0])
+    # print(add_weight(res1, res2))
