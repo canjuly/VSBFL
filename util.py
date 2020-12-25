@@ -1,3 +1,5 @@
+import pylcs
+
 def read_file(file_name):
     '''
     已utf-8编码读文件，并按行返回
@@ -100,23 +102,30 @@ def cal_LCS(list1, list2):
     '''
     求最长匹配子串（的长度）
     '''
-    ss = []
-    l1 = len(list1)
-    l2 = len(list2)
-    for i in range(l1 + 1):
-        temp = []
-        for j in range(l2 + 1):
-            temp.append(0)
-        ss.append(temp)
-    for i in range(1, l1 + 1):
-        for j in range(1, l2 + 1):
-            if list1[i-1] == list2[j-1]:
-                ss[i][j] = ss[i-1][j-1] + 1;
-                # 如果上一组对应相等，则在上一组所存匹配数加一
-            else:
-                ss[i][j] = max(ss[i-1][j], ss[i][j-1]);
-                # 不相等就取前两种状态匹配数最大值
-    return ss[l1][l2]
+    # ss = []
+    # l1 = len(list1)
+    # l2 = len(list2)
+    # for i in range(l1 + 1):
+    #     temp = []
+    #     for j in range(l2 + 1):
+    #         temp.append(0)
+    #     ss.append(temp)
+    # for i in range(1, l1 + 1):
+    #     for j in range(1, l2 + 1):
+    #         if list1[i-1] == list2[j-1]:
+    #             ss[i][j] = ss[i-1][j-1] + 1;
+    #             # 如果上一组对应相等，则在上一组所存匹配数加一
+    #         else:
+    #             ss[i][j] = max(ss[i-1][j], ss[i][j-1]);
+    #             # 不相等就取前两种状态匹配数最大值
+    # return ss[l1][l2]
+    
+    # 上面是直接用dp算法，python速度太慢了，
+    # 当序列长度上万时，时间得一分钟，所以用pylcs
+    # 这个包直接写的c++，大概能快几十倍
+    s1 = '|'.join(list1)
+    s2 = '/'.join(list2)
+    return pylcs.lcs(s1, s2)
 
 def cal_KM(weight):
     '''
@@ -167,9 +176,12 @@ def cal_KM(weight):
 if __name__ == "__main__":
     # print(cal_LCS( [2, 4], [1, 2, 3, 4]))
     # weight = {'n': {'n': 78, 'i': 1}, 'i': {'n': 0, 'i': 77}, 'j': {'n': 79, 'i': 80}}
-    weight = {'N': {'N': 7, 'w': 3, 'h': 3, 'i': 5, 'j': 3, 'k': 2, 'l': 1}, 
-    'w': {'N': 3, 'w': 7, 'h': 3, 'i': 6, 'j': 0, 'k': 0, 'l': 1}, 
-    'h': {'N': 3, 'w': 3, 'h': 7, 'i': 2, 'j': 0, 'k': 0, 'l': 1}, 
-    'i': {'N': 4, 'w': 5, 'h': 5, 'i': 20, 'j': 13, 'k': 10}, 
-    'j': {'N': 4, 'w': 5, 'h': 2, 'i': 40, 'j': 13, 'k': 39}}
-    print(cal_KM(weight))
+    # weight = {'N': {'N': 7, 'w': 3, 'h': 3, 'i': 5, 'j': 3, 'k': 2, 'l': 1}, 
+    # 'w': {'N': 3, 'w': 7, 'h': 3, 'i': 6, 'j': 0, 'k': 0, 'l': 1}, 
+    # 'h': {'N': 3, 'w': 3, 'h': 7, 'i': 2, 'j': 0, 'k': 0, 'l': 1}, 
+    # 'i': {'N': 4, 'w': 5, 'h': 5, 'i': 20, 'j': 13, 'k': 10}, 
+    # 'j': {'N': 4, 'w': 5, 'h': 2, 'i': 40, 'j': 13, 'k': 39}}
+    # print(cal_KM(weight))
+    l1 = ['1', '2', '3', '4', '5', '6']
+    l2 = ['1', '4', '2', '3', '5']
+    print(cal_LCS(l1, l2))
