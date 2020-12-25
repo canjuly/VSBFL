@@ -288,8 +288,8 @@ def get_cpp_variable_sequence(test_data_file):
 
 if __name__ == "__main__":
     
-    file_name = r'E:\fault_loc\ITSP-data\2870\WA_c\278304_buggy.c'
-    test_data_file = r'E:\fault_loc\ITSP-data\2870\TEST_DATA_TCG1'
+    file_name = r'E:\fault_loc\ITSP-data\2866\AC_c\277796_correct.c'
+    test_data_file = r'E:\fault_loc\ITSP-data\2866\TEST_DATA_TCG1'
     lines = instrumentation(file_name)
     # info = get_cpp_variable_sequence(test_data_file)
     

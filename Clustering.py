@@ -6,7 +6,7 @@ import openpyxl
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from matplotlib import pyplot as plt
 
-cluster_file = r'result\cluster.xlsx'
+cluster_file = r'result\cluster_op2.xlsx'
 
 def get_ac_res(ac_dir, test_dir_path, res_dir):
     '''
@@ -76,6 +76,8 @@ def add_weight(res1, res2):
     weight = {}
     var_list1 = []
     var_list2 = []
+    # print(res1)
+    # print(res2)
     for i in range(len(res1)):
         item1 = res1[i]
         item2 = res2[i]
@@ -114,11 +116,13 @@ def cal_variable_sequence_length(variable_info_list):
     for i in variable_info_list:
         variable_info = i['info']
         for var in variable_info:
+            # print(var)
             # vars_len[var] = len(wa_info[var]) + len(ac_info[vars_pair[var]['var']])
             if var not in res_dict:
                 res_dict[var] = len(variable_info[var])
             else:
                 res_dict[var] += len(variable_info[var])
+    # print(res_dict)  
     return res_dict
 
 def prepare_matrix(file_dir_path, test_dir_path):
@@ -206,12 +210,15 @@ def find_similar_ac_file(wa_res, ac_res_dir):
         vars_pair = util.cal_KM(weight)
         # print(vars_pair)
         sum = 0
+        cnt = 0
         for var in vars_pair:
+            cnt += 1
             len1 = wa_variable_length[var]
             var2 = vars_pair[var]['var']
             len2 = ac_variable_length[var2]
             sum += vars_pair[var]['value'] * 2.0 / (len1 + len2)
         # print(sum)
+        # sum = sum / cnt  # 另一种计算相似度的方法
         res_list.append({
             'file': ac_file,
             'sum': sum
@@ -277,15 +284,15 @@ if __name__ == '__main__':
 
     problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]
     for problem in problem_list:
-        problem = 2871
-        # print(problem)
+        # problem = 2866
+        print(problem)
         ac_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'AC_c')
         test_dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
         ac_res_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'Res_c')
         wa_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'WA_c')
         # get_ac_res(ac_dir, test_dir_path, ac_res_dir)
         run_dir(wa_dir, ac_res_dir, test_dir_path)
-        break
+        # break
     # res1 = Snooper.get_cpp_variable_sequence(r'E:\fault_loc\ITSP-data\2871\WA_c\278419_buggy.c', r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1')
     # res2 = eval(util.read_file(r'E:\fault_loc\ITSP-data\2871\Res_c\278461_correct.out')[0])
     # print(add_weight(res1, res2))

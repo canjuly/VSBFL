@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # print(get_py_variable_sequence(file_path, test_dir_path))
 
     
-    file_path = r'E:\fault_loc\ITSP-data\2871\WA_c\278419_buggy.c'
-    test_dir_path = r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1'
+    file_path = r'E:\fault_loc\ITSP-data\2866\WA_c\277755_buggy.c'
+    test_dir_path = r'E:\fault_loc\ITSP-data\2866\TEST_DATA_TCG1'
     print(get_cpp_variable_sequence(file_path, test_dir_path))
     

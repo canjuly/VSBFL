@@ -13,7 +13,13 @@ def get_sequences(wa_file, ac_file, test_dir_path, language):
         ac_res = Snooper.get_py_variable_sequence(ac_file, test_dir_path)
     elif language == 'cpp' or language == 'c':
         wa_res = Snooper.get_cpp_variable_sequence(wa_file, test_dir_path)
-        ac_res = Snooper.get_cpp_variable_sequence(ac_file, test_dir_path)
+        # 没有事先处理好ac代码的序列用这边
+        # ac_res = Snooper.get_cpp_variable_sequence(ac_file, test_dir_path) 
+
+        # 处理好ac代码的序列用这边
+        ac_file = ac_file.replace('AC_c', 'Res_c').replace('.c', '.out')   
+        ac_res = util.read_file_by_str(ac_file)
+        ac_res = eval(ac_res)
     else:
         wa_res = []
         ac_res = []
