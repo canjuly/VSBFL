@@ -47,6 +47,8 @@ def add_weight(wa_res, ac_res):
     计算错误代码中的变量和正确代码变量的边权重
     '''
     weight = {}
+    var_list1 = []
+    var_list2 = []
     for i in range(len(wa_res)):
         wa_item = wa_res[i]
         ac_item = ac_res[i]
@@ -60,16 +62,24 @@ def add_weight(wa_res, ac_res):
         for wa_vars in wa_info:
             wa_list = wa_info[wa_vars]
             if wa_vars not in weight:
+                var_list1.append(wa_vars)
                 weight[wa_vars] = {}
             
             for ac_vars in ac_info:
                 ac_list = ac_info[ac_vars]
+                if ac_vars not in var_list2:
+                    var_list2.append(ac_vars)
                 LCS = util.cal_LCS(wa_list, ac_list)
+                # print(ac_list, wa_list, LCS)
                 if ac_vars not in weight[wa_vars]:
                     weight[wa_vars][ac_vars] = LCS
                 else:
                     weight[wa_vars][ac_vars] += LCS
         # break
+    for vars1 in var_list1:
+        for vars2 in var_list2:
+            if vars2 not in weight[vars1]:
+                weight[vars1][vars2] = 0
     # print(weight)
     return weight
 
@@ -79,7 +89,10 @@ def cal_suspicion(weight, wa_res, ac_res):
     计算错误代码中各变量的怀疑度值
     '''
     vars_pair = util.cal_KM(weight) #二分图最大完备匹配
+    # print(weight)
     # print(vars_pair)
+    # print(wa_res)
+    # print(ac_res)
     vars_len = {}
     for i in range(len(wa_res)):
         wa_item = wa_res[i]

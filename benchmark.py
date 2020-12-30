@@ -7,8 +7,7 @@ import openpyxl
 import SBFL_Formular as SF
 import Variable_sus as vs
 
-problem_id = 2867
-res_file = r'result\fault_loc.xlsx'  # 请先自己创建这个文件
+res_file = r'result\fault_loc_op2.xlsx'  # 请先自己创建这个文件
 
 def find_pair_by_tag(dir_path):
     '''
@@ -114,29 +113,35 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     final_rank = []
 
     # 新的排序方法
-    # coefficient_list = []
-    # final_rank_t = []
-    # VSBFL_dic = {}
-    # for item in VSBFL_rank:
-    #     VSBFL_dic[item['name']] = item['value']
-    # for i in range(len(variable_info)):
-    #     coefficient = 0
-    #     for variable in variable_info[i]:
-    #         coefficient += VSBFL_dic[variable]
-    #     if len(variable_info[i]) != 0:
-    #         coefficient = 1 + coefficient / len(variable_info[i])
-    #     else:
-    #         coefficient = 1.0
-    #     coefficient_list.append(coefficient)
-    # for i in range(len(N_tuple)):
-    #     final_rank_t.append({
-    #         'no': i + 1,
-    #         'pos': N_tuple[i] * coefficient_list[i]
-    #     })
-    # print(final_rank_t)
-    # final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
-    # for i in final_rank_t:
-    #     final_rank.append(i['no'])
+    coefficient_list = []
+    final_rank_t = []
+    VSBFL_dic = {}
+    for item in VSBFL_rank:
+        VSBFL_dic[item['name']] = item['value']
+    for i in range(len(variable_info)):
+        coefficient = 0
+        for variable in variable_info[i]:
+            coefficient += VSBFL_dic[variable]
+        if len(variable_info[i]) != 0:
+            coefficient = 1 + coefficient / len(variable_info[i])
+        else:
+            coefficient = 1.0
+        coefficient_list.append(coefficient)
+    for i in range(len(N_tuple)):
+        final_rank_t.append({
+            'no': i + 1,
+            'pos': N_tuple[i] * coefficient_list[i]
+        })
+    print(final_rank_t)
+    final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
+    tmp_list = []
+    for i in range(len(final_rank_t)):
+        if i != 0 and abs(final_rank_t[i]['pos'] - final_rank_t[i-1]['pos']) > 0.0001:
+            final_rank.append(tmp_list)
+            tmp_list = []
+        tmp_list.append(final_rank_t[i]['no'])
+    if len(tmp_list) != 0:
+        final_rank.append(tmp_list)
 
     # 新的排序方法2
     # coefficient_list = []
@@ -171,21 +176,21 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     #     final_rank.append(tmp_list)
 
     # 旧的排序方法
-    for item in VSBFL_rank:
-        variable = item['name']
-        cover_line_c = []
-        for i in range(len(variable_info)):
-            if variable in variable_info[i]:
-                cover_line_c.append({
-                    'no': i+1,
-                    'pos': SFL_rank[i]
-                })
-        cover_line_c.sort(key=lambda s:(s['pos']))
-        for i in cover_line_c:
-            try:
-                final_rank.index(i['no'])
-            except:
-                final_rank.append(i['no'])
+    # for item in VSBFL_rank:
+    #     variable = item['name']
+    #     cover_line_c = []
+    #     for i in range(len(variable_info)):
+    #         if variable in variable_info[i]:
+    #             cover_line_c.append({
+    #                 'no': i+1,
+    #                 'pos': SFL_rank[i]
+    #             })
+    #     cover_line_c.sort(key=lambda s:(s['pos']))
+    #     for i in cover_line_c:
+    #         try:
+    #             final_rank.index(i['no'])
+    #         except:
+    #             final_rank.append(i['no'])
 
     # print(final_rank)
     return final_rank
@@ -237,12 +242,18 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
 if __name__ == "__main__":
 
     # pair_info = find_pair_by_res(r'E:\fault_loc\VSFL-TCG\result\cluster.xlsx')
-    pair_info = find_pair_by_tag(r'E:\fault_loc\ITSP-data\2867\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2867\WA_c\277943_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2867\AC_c', pair_info['277943_buggy.c'])
-    # test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
+    # pair_info = find_pair_by_tag(r'E:\fault_loc\ITSP-data\2871\Tag_c')
+    # file_path = r'E:\fault_loc\ITSP-data\2871\WA_c\278461_buggy.c'
+    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2871\AC_c', pair_info['278461_buggy.c'])
+    # test_dir_path = r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1'
     # run_file(file_path, ac_file, test_dir_path, 'c')
 
-    dir_path = r'E:\fault_loc\ITSP-data\2867\WA_c'
-    test_dir_path = r'E:\fault_loc\ITSP-data\2867\TEST_DATA_TCG1'
-    run_dir(dir_path, pair_info, test_dir_path)
+    problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]
+    for problem in problem_list:
+        # problem = 2871
+        print(problem)
+        pair_info = find_pair_by_tag(os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'Tag_c'))
+        dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'WA_c')
+        test_dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
+        run_dir(dir_path, pair_info, test_dir_path)
+        # break

@@ -85,7 +85,7 @@ def cal_exam(rows, tag_info):
     # print(ans, cnt)
     return ans/cnt
 
-def statistical_fl_results(file_path, tag_dir):
+def statistical_fl_results(file_path, tag_root_dir):
     '''
     统计错误定位的实验结果
     '''
@@ -94,13 +94,21 @@ def statistical_fl_results(file_path, tag_dir):
         return
     wb = openpyxl.load_workbook(file_path) # 读取 工作簿
     ws = wb.worksheets[0]  
+    ws.append({'a':'problem_id', 'b':'exam', 'c':'top_1', 'd':'top_3', 'e':'top_5', 'f': 'top_10'})
+    for i, sheet in enumerate(wb):
+        if i == 0:
+            continue
+        print(sheet.title)
     # row_max = ws.max_row # 获取最大行
     # con_max = ws.max_column # 获取最大列
-    tag_info = get_tag_info(tag_dir)
-    top_1, top_3, top_5, top_10 = cal_top_N(ws.rows, tag_info)
-    print(top_1, top_3, top_5, top_10)
-    exam = cal_exam(ws.rows, tag_info)
-    print(exam)
+        tag_dir = os.path.join(tag_root_dir, sheet.title, 'Tag_c')
+        tag_info = get_tag_info(tag_dir)
+        top_1, top_3, top_5, top_10 = cal_top_N(sheet.rows, tag_info)
+        print(top_1, top_3, top_5, top_10)
+        exam = cal_exam(sheet.rows, tag_info)
+        print(exam)
+        ws.append({'a':sheet.title, 'b':exam, 'c':top_1, 'd':top_3, 'e':top_5, 'f': top_10})
+    wb.save(file_path)
     return
 
 def cal_exact_result(rows):
@@ -150,9 +158,9 @@ def statistical_parse_results(file_path):
 
 if __name__ == "__main__":
     
-    # file_path = r'E:\fault_loc\VSFL-TCG\result\res_2867.xlsx'
-    # tag_dir = r'E:\fault_loc\ITSP-data\2867\Tag_c'
-    # statistical_fl_results(file_path, tag_dir)
+    file_path = r'E:\fault_loc\VSFL-TCG\result\fault_loc_op3.xlsx'
+    tag_dir = r'E:\fault_loc\ITSP-data'
+    statistical_fl_results(file_path, tag_dir)
 
-    file_path = r'E:\fault_loc\VSFL-TCG\result\cluster_op2.xlsx'
-    statistical_parse_results(file_path)
+    # file_path = r'E:\fault_loc\VSFL-TCG\result\cluster_op2.xlsx'
+    # statistical_parse_results(file_path)
