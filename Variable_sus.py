@@ -116,7 +116,7 @@ def cal_suspicion(weight, wa_res, ac_res):
         if vars_len[var] == 0:
             vars_len[var] = 2
         res[var] = 1 - vars_pair[var]['value'] / (vars_len[var] / 2)
-    print(res)
+    # print(res)
 
     return res
 

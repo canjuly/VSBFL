@@ -1,6 +1,7 @@
 import openpyxl
 import os
 import util
+import numpy as np
 
 def get_tag_info(tag_dir):
     '''
@@ -12,17 +13,16 @@ def get_tag_info(tag_dir):
         file_path = os.path.join(tag_dir, i)
         lines = util.read_file(file_path)
         name = lines[0].replace('\n', '')
-        num = len(lines[2].split(','))
-        if num != 1:
-            tag_info[name] = 0
-        else:
-            tag_info[name] = int(lines[2])
+        arr = lines[2].split(',')
+        tag_info[name] = []
+        for num in arr:
+            tag_info[name].append(int(num))
     return tag_info
 
 
 def cal_top_N(rows, tag_info):
     '''
-    统计Top-N的值
+    统计Top-N的值(多错误)
     '''
     top_1 = 0
     top_3 = 0
@@ -35,55 +35,123 @@ def cal_top_N(rows, tag_info):
         # print(row[2].value)
         if i == 0:
             continue
+        cnt += 1
         name = row[0].value
         final_rank = eval(row[1].value)
-        if tag_info[name] == 0:
+        ans = 0
+        for num in tag_info[name]:
+            no = 0
+            for j, column in enumerate(final_rank):
+                no += len(column)
+                if num in column:
+                    ans += no
+                    break
+        ans = ans / len(tag_info[name])
+        if ans <= 1:
+            top_1 += 1
+        if ans <= 3:
+            top_3 += 1
+        if ans <= 5:
+            top_5 += 1
+        if ans <= 10:
+            top_10 += 1
+        # break
+    # return top_1/cnt, top_3/cnt, top_5/cnt, top_10/cnt
+    return top_1, top_3, top_5, top_10
+
+def cal_top_N_first(rows, tag_info):
+    '''
+    统计Top-N的值(第一个错误)
+    '''
+    top_1 = 0
+    top_3 = 0
+    top_5 = 0
+    top_10 = 0
+    cnt = 0
+    for i, row in enumerate(rows):
+        if i == 0:
             continue
+        # print(row[0].value, end='\t')
+        # print(row[1].value, end='\t')
+        # print(row[2].value)
         cnt += 1
+        name = row[0].value
+        final_rank = eval(row[1].value)
         ans = 0
         for j, column in enumerate(final_rank):
-            if tag_info[name] in column:
-                ans += 1
-                if ans <= 1:
-                    top_1 += 1
-                if ans <= 3:
-                    top_3 += 1
-                if ans <= 5:
-                    top_5 += 1
-                if ans <= 10:
-                    top_10 += 1
-                break
-            else:
+            flag = 0
+            for num in tag_info[name]:
                 ans += len(column)
+                if num in column:
+                    flag = 1
+                    break
+            if flag == 1:
+                break
+        if ans <= 1:
+            top_1 += 1
+        if ans <= 3:
+            top_3 += 1
+        if ans <= 5:
+            top_5 += 1
+        if ans <= 10:
+            top_10 += 1
         # break
-    return top_1/cnt, top_3/cnt, top_5/cnt, top_10/cnt
+    # return top_1/cnt, top_3/cnt, top_5/cnt, top_10/cnt
+    return top_1, top_3, top_5, top_10
 
 def cal_exam(rows, tag_info):
     '''
-    计算exam值
+    计算exam值(多错误)
     '''
-    ans = 0
-    cnt = 0
+    res = []
     for i, row in enumerate(rows):
         # print(row[0].value, end='\t')
         # print(row[1].value, end='\t')
         # print(row[2].value)
         if i == 0:
             continue
+        ans = 0
         name = row[0].value
         final_rank = eval(row[1].value)
-        if tag_info[name] == 0:
-            continue
-        cnt += 1
-        no = 0
-        for j, column in enumerate(final_rank):
-            if tag_info[name] in column:
-                no += 1
-                ans += no
-            else:
+        for num in tag_info[name]:
+            no = 0
+            for j, column in enumerate(final_rank):
                 no += len(column)
-    # print(ans, cnt)
-    return ans/cnt
+                if num in column:
+                    ans += no
+                    break
+        ans = ans / len(tag_info[name])
+        res.append(ans)
+    return res
+
+def cal_exam_first(rows, tag_info):
+    '''
+    计算exam值(第一个错误)
+    '''
+    res = []
+    ans = 0
+    cnt = 0
+    for i, row in enumerate(rows):
+        if i == 0:
+            continue
+        # print(row[0].value, end='\t')
+        # print(row[1].value, end='\t')
+        # print(row[2].value)
+        cnt += 1
+        name = row[0].value
+        final_rank = eval(row[1].value)
+        for j, column in enumerate(final_rank):
+            flag = 0
+            for num in tag_info[name]:
+                ans += len(column)
+                if num in column:
+                    flag = 1
+                    break
+            if flag == 1:
+                break
+    ans = ans / cnt
+    res.append(ans)
+    return res
 
 def statistical_fl_results(file_path, tag_root_dir):
     '''
@@ -94,20 +162,23 @@ def statistical_fl_results(file_path, tag_root_dir):
         return
     wb = openpyxl.load_workbook(file_path) # 读取 工作簿
     ws = wb.worksheets[0]  
-    ws.append({'a':'problem_id', 'b':'exam', 'c':'top_1', 'd':'top_3', 'e':'top_5', 'f': 'top_10'})
+    ws.append({'a':'problem_id', 'b':'exam', 'c':'top_1', 'd':'top_3', 'e':'top_5', 'f': 'top_10','g': 'total_num'})
     for i, sheet in enumerate(wb):
-        if i == 0:
+        if i == 0 or i == 1:
             continue
         print(sheet.title)
-    # row_max = ws.max_row # 获取最大行
-    # con_max = ws.max_column # 获取最大列
+        # row_max = sheet.max_row # 获取最大行
+        # con_max = sheet.max_column # 获取最大列
         tag_dir = os.path.join(tag_root_dir, sheet.title, 'Tag_c')
         tag_info = get_tag_info(tag_dir)
-        top_1, top_3, top_5, top_10 = cal_top_N(sheet.rows, tag_info)
+        # top_1, top_3, top_5, top_10 = cal_top_N(sheet.rows, tag_info)
+        top_1, top_3, top_5, top_10 = cal_top_N_first(sheet.rows, tag_info)
         print(top_1, top_3, top_5, top_10)
-        exam = cal_exam(sheet.rows, tag_info)
+        # exam = cal_exam(sheet.rows, tag_info)
+        exam = cal_exam_first(sheet.rows, tag_info)
         print(exam)
-        ws.append({'a':sheet.title, 'b':exam, 'c':top_1, 'd':top_3, 'e':top_5, 'f': top_10})
+        ws.append({'a':sheet.title, 'b':np.mean(exam), 'c':top_1, 'd':top_3, 'e':top_5, 'f': top_10, 'g':sheet.max_row - 1})
+        # break
     wb.save(file_path)
     return
 

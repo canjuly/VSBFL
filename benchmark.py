@@ -4,10 +4,11 @@ import util
 import Parse_ast
 import Coverage
 import openpyxl
+import numpy as np
 import SBFL_Formular as SF
 import Variable_sus as vs
 
-res_file = r'result\fault_loc_op2.xlsx'  # 请先自己创建这个文件
+res_file = r'result\fault_loc_sbfl.xlsx'  # 请先自己创建这个文件
 
 def find_pair_by_tag(dir_path):
     '''
@@ -79,6 +80,10 @@ def cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed):
 def get_SFL_rank(file_path, test_dir_path, language):
     '''
     计算SBFL的怀疑度和排名
+    返回值中：
+    SFL_rank是排好序的语句怀疑度列表
+    SFL_sus是排好序的语句怀疑度值
+    N_tuple是源代码顺序的语句怀疑度值
     '''
     if language == 'py':
         passed_test_num, failed_test_num, lines_passed,  lines_failed = Coverage.get_python_cov_info(file_path, test_dir_path)
@@ -105,6 +110,48 @@ def get_SFL_rank(file_path, test_dir_path, language):
     # print(SFL_sus)
     return SFL_rank, SFL_sus, N_tuple
 
+def get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language):
+    '''
+    这里是用于解决tie问题的一个小补丁：
+    当SBFL所有句子怀疑度一样的时候，代表分支并没有出错。
+    当所有变量怀疑度都为0的时候，代表变量的计算过程没有出错
+    那么这个时候是不是应该只能是输出错误呢
+    '''
+    # print(file_path, N_tuple, VSBFL_suspicion)
+    simple_coefficient = list(np.zeros(len(N_tuple)))
+    flag = 0
+    if np.max(N_tuple) - np.min(N_tuple) > 0.001:
+        flag = 1
+    for var in VSBFL_suspicion:
+        if VSBFL_suspicion[var] > 0.0001: 
+            flag = 1
+            break
+    if flag == 1:
+        simple_coefficient = N_tuple
+    else:
+        lines = util.read_file(file_path)
+        for i, line in enumerate(lines):
+            flag = False
+            if language == 'cpp' or language == 'c':
+                flag = (util.find_pos('cin', line) or util.find_pos('printf', line))
+            elif language == 'py':
+                flag = util.find_pos('printf', line)
+            # print(line)
+            # print(util.find_pos('printf', line))
+            if flag == True:
+                simple_coefficient[i] = 1
+
+    SFL_rank = []
+    SFL_sus = []
+    for i,num in enumerate(simple_coefficient):
+        SFL_rank.append({
+            'no': i + 1,
+            'similarity': simple_coefficient[i]
+        })
+        SFL_sus.append(simple_coefficient[i])
+    SFL_rank.sort(key=lambda s:(s['similarity']), reverse=True)
+    SFL_sus.sort(reverse=True)
+    return SFL_rank, SFL_sus, simple_coefficient
 
 def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     '''
@@ -113,56 +160,24 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     final_rank = []
 
     # 新的排序方法
-    coefficient_list = []
-    final_rank_t = []
-    VSBFL_dic = {}
-    for item in VSBFL_rank:
-        VSBFL_dic[item['name']] = item['value']
-    for i in range(len(variable_info)):
-        coefficient = 0
-        for variable in variable_info[i]:
-            coefficient += VSBFL_dic[variable]
-        if len(variable_info[i]) != 0:
-            coefficient = 1 + coefficient / len(variable_info[i])
-        else:
-            coefficient = 1.0
-        coefficient_list.append(coefficient)
-    for i in range(len(N_tuple)):
-        final_rank_t.append({
-            'no': i + 1,
-            'pos': N_tuple[i] * coefficient_list[i]
-        })
-    print(final_rank_t)
-    final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
-    tmp_list = []
-    for i in range(len(final_rank_t)):
-        if i != 0 and abs(final_rank_t[i]['pos'] - final_rank_t[i-1]['pos']) > 0.0001:
-            final_rank.append(tmp_list)
-            tmp_list = []
-        tmp_list.append(final_rank_t[i]['no'])
-    if len(tmp_list) != 0:
-        final_rank.append(tmp_list)
-
-    # 新的排序方法2
     # coefficient_list = []
     # final_rank_t = []
     # VSBFL_dic = {}
     # for item in VSBFL_rank:
     #     VSBFL_dic[item['name']] = item['value']
-    # # print(N_tuple)
     # for i in range(len(variable_info)):
-    #     coefficient = 1.0
+    #     coefficient = 0
     #     for variable in variable_info[i]:
-    #         coefficient = coefficient * (1 + VSBFL_dic[variable])
-    #     # if len(variable_info[i]) != 0:
-    #     #     coefficient = 1 + coefficient / len(variable_info[i])
-    #     # else:
-    #     #     coefficient = 1.0
+    #         coefficient += VSBFL_dic[variable]
+    #     if len(variable_info[i]) != 0:
+    #         coefficient = 1 + coefficient / len(variable_info[i])
+    #     else:
+    #         coefficient = 1.0
     #     coefficient_list.append(coefficient)
     # for i in range(len(N_tuple)):
     #     final_rank_t.append({
     #         'no': i + 1,
-    #         'pos': (1.0 + N_tuple[i]) * coefficient_list[i]
+    #         'pos': (1 + N_tuple[i]) * coefficient_list[i]
     #     })
     # # print(final_rank_t)
     # final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
@@ -174,6 +189,38 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     #     tmp_list.append(final_rank_t[i]['no'])
     # if len(tmp_list) != 0:
     #     final_rank.append(tmp_list)
+
+    # 新的排序方法2
+    coefficient_list = []
+    final_rank_t = []
+    VSBFL_dic = {}
+    for item in VSBFL_rank:
+        VSBFL_dic[item['name']] = item['value']
+    # print(N_tuple)
+    for i in range(len(variable_info)):
+        coefficient = 1.0
+        for variable in variable_info[i]:
+            coefficient = coefficient * (1 + VSBFL_dic[variable])
+        # if len(variable_info[i]) != 0:
+        #     coefficient = 1 + coefficient / len(variable_info[i])
+        # else:
+        #     coefficient = 1.0
+        coefficient_list.append(coefficient)
+    for i in range(len(N_tuple)):
+        final_rank_t.append({
+            'no': i + 1,
+            'pos': (1.0 + N_tuple[i]) * coefficient_list[i]
+        })
+    # print(final_rank_t)
+    final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
+    tmp_list = []
+    for i in range(len(final_rank_t)):
+        if i != 0 and abs(final_rank_t[i]['pos'] - final_rank_t[i-1]['pos']) > 0.0001:
+            final_rank.append(tmp_list)
+            tmp_list = []
+        tmp_list.append(final_rank_t[i]['no'])
+    if len(tmp_list) != 0:
+        final_rank.append(tmp_list)
 
     # 旧的排序方法
     # for item in VSBFL_rank:
@@ -195,18 +242,41 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     # print(final_rank)
     return final_rank
 
+def cal_final_rank2(SFL_rank, SFL_sus):
+    '''
+    获取SBFL排名
+    '''
+    # print(SFL_rank, SFL_sus)
+    final_rank = []
+    tmp_list = []
+    for i,num in enumerate(SFL_sus):
+        if i == 0:
+            tmp_list.append(SFL_rank[i])
+            continue
+        if num != SFL_sus[i-1]:
+            final_rank.append(tmp_list)
+            tmp_list = []
+        else:
+            tmp_list.append(SFL_rank[i])
+    if len(tmp_list) > 0:
+        final_rank.append(tmp_list)
+    return final_rank,[]
+
 def run_file(file_path, ac_file, test_dir_path, language):
     '''
     计算程序的最后怀疑度列表
     '''
     print(file_path, ac_file)
     SFL_rank, SFL_sus, N_tuple = get_SFL_rank(file_path, test_dir_path, language)
-    # print(SFL_rank, SFL_sus, N_tuple)
-    VSBFL_suspicion, VSBFL_rank = vs.cal_VSBFL_rank(file_path, ac_file, test_dir_path, language)
-    variable_list = list(VSBFL_suspicion.keys())
-    variable_info = util.collect_variable_info(variable_list, file_path)
-    # print(variable_info)
-    final_rank = cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info)
+    # print(N_tuple)
+    final_rank, VSBFL_rank = cal_final_rank2(SFL_rank, SFL_sus)
+    # VSBFL_suspicion, VSBFL_rank = vs.cal_VSBFL_rank(file_path, ac_file, test_dir_path, language)
+    # SFL_rank, SFL_sus, N_tuple = get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language)
+    # # print(N_tuple)
+    # variable_list = list(VSBFL_suspicion.keys())
+    # variable_info = util.collect_variable_info(variable_list, file_path)
+    # # print(variable_info)
+    # final_rank = cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info)
     print(final_rank)
     return final_rank, VSBFL_rank
 
@@ -242,10 +312,10 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
 if __name__ == "__main__":
 
     # pair_info = find_pair_by_res(r'E:\fault_loc\VSFL-TCG\result\cluster.xlsx')
-    # pair_info = find_pair_by_tag(r'E:\fault_loc\ITSP-data\2871\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2871\WA_c\278461_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2871\AC_c', pair_info['278461_buggy.c'])
-    # test_dir_path = r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1'
+    # pair_info = find_pair_by_tag(r'E:\fault_loc\ITSP-data\2810\Tag_c')
+    # file_path = r'E:\fault_loc\ITSP-data\2810\WA_c\270083_buggy.c'
+    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2810\AC_c', pair_info['270083_buggy.c'])
+    # test_dir_path = r'E:\fault_loc\ITSP-data\2810\TEST_DATA_TCG1'
     # run_file(file_path, ac_file, test_dir_path, 'c')
 
     problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]

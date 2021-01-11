@@ -59,8 +59,9 @@ def is_operator(ch):
     判断是否为特殊字符
     '''
     op_list = '!@#$%^&*()+{}|:\"<>?`-=[]\\;\',./ '
+    op_list2 = '\t\n\r'
     # print(op_list)
-    if op_list.find(ch) != -1:
+    if op_list.find(ch) >= 0 or op_list2.find(ch) >= 0:
         return True
     else:
         return False
@@ -70,7 +71,7 @@ def find_pos(str1, str2):
     判断str2中是否含有变量str1
     '''
     str1_len = len(str1)
-    while str2.find(str1) != -1:
+    while str2.find(str1) >= 0:
         pos = str2.find(str1)
         # print(pos, len(str2))
         if pos == 0 and is_operator(str2[pos + str1_len]):
@@ -102,30 +103,30 @@ def cal_LCS(list1, list2):
     '''
     求最长匹配子串（的长度）
     '''
-    # ss = []
-    # l1 = len(list1)
-    # l2 = len(list2)
-    # for i in range(l1 + 1):
-    #     temp = []
-    #     for j in range(l2 + 1):
-    #         temp.append(0)
-    #     ss.append(temp)
-    # for i in range(1, l1 + 1):
-    #     for j in range(1, l2 + 1):
-    #         if list1[i-1] == list2[j-1]:
-    #             ss[i][j] = ss[i-1][j-1] + 1;
-    #             # 如果上一组对应相等，则在上一组所存匹配数加一
-    #         else:
-    #             ss[i][j] = max(ss[i-1][j], ss[i][j-1]);
-    #             # 不相等就取前两种状态匹配数最大值
-    # return ss[l1][l2]
+    ss = []
+    l1 = len(list1)
+    l2 = len(list2)
+    for i in range(l1 + 1):
+        temp = []
+        for j in range(l2 + 1):
+            temp.append(0)
+        ss.append(temp)
+    for i in range(1, l1 + 1):
+        for j in range(1, l2 + 1):
+            if list1[i-1] == list2[j-1]:
+                ss[i][j] = ss[i-1][j-1] + 1;
+                # 如果上一组对应相等，则在上一组所存匹配数加一
+            else:
+                ss[i][j] = max(ss[i-1][j], ss[i][j-1]);
+                # 不相等就取前两种状态匹配数最大值
+    return ss[l1][l2]
     
     # 上面是直接用dp算法，python速度太慢了，
     # 当序列长度上万时，时间得一分钟，所以用pylcs
     # 这个包直接写的c++，大概能快几十倍
-    s1 = '|'.join(list1)
-    s2 = '/'.join(list2)
-    return pylcs.lcs(s1, s2)
+    # s1 = '|'.join(list1)
+    # s2 = '/'.join(list2)
+    # return pylcs.lcs(s1, s2)
 
 def cal_KM(weight):
     '''
