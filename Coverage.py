@@ -1,13 +1,14 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import shutil
 
 ##############################################
 # 若是在win平台下实验，我强烈不建议修改这个路径  #
-coverage_file_name='log\\coverage.log'       #
-temp_cpp_src_file = 'log\\temp.cpp'          #
-temp_output_file = 'log\\temp.out'           #
-temp_compile_file = 'log\\temp'              #
+coverage_file_name= os.path.join('log', 'coverage.log')       #
+temp_cpp_src_file = os.path.join('log', 'temp.cpp')          #
+temp_output_file =  os.path.join('log', 'temp.out')           #
+temp_compile_file = os.path.join('log', 'temp')              #
                                              #
 ##############################################
 
@@ -84,8 +85,8 @@ def get_python_cov_info(src_file_path, test_dir_path):
     '''
     计算四元组
     '''
-    if not os.path.exists('log\\'):
-        os.makedirs('log')
+    # if not os.path.exists('log\\'):
+    #     os.makedirs('log')
 
     failed_test_num = 0
     passed_test_num = 0
@@ -145,8 +146,8 @@ def get_cpp_cover_line(src_file_path, input_file):
 
 def get_cpp_cov_info(src_file_path, test_dir_path):
 
-    if not os.path.exists('log\\'):
-        os.makedirs('log')
+    # if not os.path.exists('log\\'):
+    #     os.makedirs('log')
     shutil.copy(src_file_path, temp_cpp_src_file)
 
     failed_test_num = 0
@@ -171,8 +172,10 @@ def get_cpp_cov_info(src_file_path, test_dir_path):
             cmd2 = COMLINE_CPP_RUN % (temp_compile_file, input_file, temp_output_file)
             os.system(cmd1)
             os.system(cmd2)
-            shutil.move('temp.gcda','log\\temp.gcda')
-            shutil.move('temp.gcno','log\\temp.gcno')
+            # if os.path.exists('temp.gcda'):
+            shutil.move('temp.gcda', os.path.join('log', 'temp.gcda'))
+            # if os.path.exists('temp.gcno'):
+            shutil.move('temp.gcno', os.path.join('log', 'temp.gcno'))
         except:
             print('crashed')
             continue
