@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 import os
 import Snooper
 import util
 import numpy as np
 import openpyxl
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from matplotlib import pyplot as plt
+# from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+# from matplotlib import pyplot as plt
 
 cluster_file = r'result\cluster_op2.xlsx'
 
@@ -286,12 +287,12 @@ if __name__ == '__main__':
     for problem in problem_list:
         # problem = 2866
         print(problem)
-        ac_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'AC_c')
-        test_dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
-        ac_res_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'Res_c')
-        wa_dir = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'WA_c')
-        # get_ac_res(ac_dir, test_dir_path, ac_res_dir)
-        run_dir(wa_dir, ac_res_dir, test_dir_path)
+        ac_dir = os.path.join(r'D:\fault_loc\ITSP-data', str(problem), 'AC_c')
+        test_dir_path = os.path.join(r'D:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
+        ac_res_dir = os.path.join(r'D:\fault_loc\ITSP-data', str(problem), 'Res_c')
+        wa_dir = os.path.join(r'D:\fault_loc\ITSP-data', str(problem), 'WA_c')
+        get_ac_res(ac_dir, test_dir_path, ac_res_dir)
+        # run_dir(wa_dir, ac_res_dir, test_dir_path)
         # break
     # res1 = Snooper.get_cpp_variable_sequence(r'E:\fault_loc\ITSP-data\2871\WA_c\278419_buggy.c', r'E:\fault_loc\ITSP-data\2871\TEST_DATA_TCG1')
     # res2 = eval(util.read_file(r'E:\fault_loc\ITSP-data\2871\Res_c\278461_correct.out')[0])

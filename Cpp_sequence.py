@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import Parse_ast
 import util
-import pyastyle
+# import pyastyle
 
-temp_cpp_file = r'log\temp.cpp'
-temp_out_file = r'log\temp.out'
+temp_cpp_file = os.path.join('log', 'temp.cpp')
+temp_out_file = os.path.join('log', 'temp.out')
 
 if sys.platform == "linux":
     COMLINE_PY_COV = "timeout 5 coverage run %s<%s"
@@ -20,16 +21,16 @@ else:
     COMLINE_CPP_RUN = "%s <%s >%s"
     COMLINE_CPP_COV = "gcov %s"
 
-def is_operator(ch):
-    '''
-    判断是否为特殊字符
-    '''
-    op_list = '!@#$%^&*()+{}|:\"<>?`-=[]\\;\',./ '
-    # print(op_list)
-    if op_list.find(ch) >= 0:
-        return True
-    else:
-        return False
+# def is_operator(ch):
+#     '''
+#     判断是否为特殊字符
+#     '''
+#     op_list = '!@#$%^&*()+{}|:\"<>?`-=[]\\;\',./ '
+#     # print(op_list)
+#     if op_list.find(ch) >= 0:
+#         return True
+#     else:
+#         return False
 
 def find_pos(str1, str2):
     '''
@@ -39,11 +40,11 @@ def find_pos(str1, str2):
     while str2.find(str1) != -1:
         pos = str2.find(str1)
         # print(pos, len(str2))
-        if pos == 0 and is_operator(str2[pos + str1_len]):
+        if pos == 0 and util.is_operator(str2[pos + str1_len]):
             return True
-        elif pos == len(str2) - str1_len - 1 and is_operator(str2[pos - 1]):
+        elif pos == len(str2) - str1_len - 1 and util.is_operator(str2[pos - 1]):
             return True
-        elif is_operator(str2[pos - 1]) and is_operator(str2[pos + str1_len]):
+        elif util.is_operator(str2[pos - 1]) and util.is_operator(str2[pos + str1_len]):
             return True
         str2 = str2[pos + str1_len : len(str2)]
     return False
@@ -89,7 +90,7 @@ def extract_variable(line, operator):
             var = ''
             r_pos = line.find('&')
             pos = r_pos + 1
-            while not is_operator(line[pos]):
+            while not util.is_operator(line[pos]):
                 var = var + line[pos]
                 pos += 1
             var_list.append(var)
@@ -97,7 +98,7 @@ def extract_variable(line, operator):
     elif operator == '=':
         line = line.replace('\n', '').replace(' ', '')
         # print(line)
-        while line.find(operator) != -1:
+        while line.find(operator) >= 0:
             var = ''
             r_pos = line.find(operator)
             if line[r_pos - 1] == '<' or line[r_pos - 1] == '>' or line[r_pos - 1] == '!':
@@ -107,11 +108,12 @@ def extract_variable(line, operator):
                 line = line[r_pos+2:]
                 continue
             pos = r_pos - 1
-            while is_operator(line[pos]):
+            while pos >= 0 and util.is_operator(line[pos]):
                 pos -= 1
-            while not is_operator(line[pos]):
+            while pos >= 0 and util.is_operator(line[pos]) == False:
                 var = line[pos] + var
                 pos -= 1
+            # print(var)
             var_list.append(var)
             line = line[r_pos+1:]
     elif operator == '++' or operator == '--':
@@ -121,15 +123,15 @@ def extract_variable(line, operator):
             pos = r_pos - 1
             while line[pos] == ' ':
                 pos -= 1
-            if not is_operator(line[pos]):
-                while not is_operator(line[pos]):
+            if not util.is_operator(line[pos]):
+                while not util.is_operator(line[pos]):
                     var = line[pos] + var
                     pos -= 1
             else:
                 pos = r_pos + 2
                 while line[pos] == ' ':
                     pos += 1
-                while not is_operator(line[pos]):
+                while not util.is_operator(line[pos]):
                     var += line[pos]
                     pos += 1
             var_list.append(var)

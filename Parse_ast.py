@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import ast
 import pycparser
 import os
 import shutil
 
-temp_cpp_src_file = 'log\\temp.cpp'
+temp_cpp_src_file = os.path.join('log', 'temp.cpp')
 
 
 class CodeVisitor(ast.NodeVisitor):
@@ -40,8 +41,8 @@ def get_py_variable_name_list(file_path):
 
 def get_cpp_variable_name_list(file_path):
 
-    if not os.path.exists('log\\'):
-        os.makedirs('log')
+    # if not os.path.exists('log\\'):
+    #     os.makedirs('log')
     # if sys.platform == "linux":
     #     file_short_path = 'log/' + file_path.split('/')[-1] + '/'
     # else:
@@ -60,7 +61,7 @@ def get_cpp_variable_name_list(file_path):
     variable_list = []
     ast = pycparser.parse_file(temp_cpp_src_file, use_cpp=True)
     flag = False
-    with open('log\\ast.log', 'w+') as f:
+    with open(os.path.join('log', 'ast.log'), 'w+') as f:
         ast.show(buf = f)
         f.seek(0)
         lines = f.readlines()

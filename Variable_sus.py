@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import util
@@ -14,12 +15,12 @@ def get_sequences(wa_file, ac_file, test_dir_path, language):
     elif language == 'cpp' or language == 'c':
         wa_res = Snooper.get_cpp_variable_sequence(wa_file, test_dir_path)
         # 没有事先处理好ac代码的序列用这边
-        # ac_res = Snooper.get_cpp_variable_sequence(ac_file, test_dir_path) 
+        ac_res = Snooper.get_cpp_variable_sequence(ac_file, test_dir_path) 
 
         # 处理好ac代码的序列用这边
-        ac_file = ac_file.replace('AC_c', 'Res_c').replace('.c', '.out')   
-        ac_res = util.read_file_by_str(ac_file)
-        ac_res = eval(ac_res)
+        # ac_file = ac_file.replace('AC_c', 'Res_c').replace('.c', '.out')   
+        # ac_res = util.read_file_by_str(ac_file)
+        # ac_res = eval(ac_res)
     else:
         wa_res = []
         ac_res = []
@@ -91,8 +92,8 @@ def cal_suspicion(weight, wa_res, ac_res):
     vars_pair = util.cal_KM(weight) #二分图最大完备匹配
     # print(weight)
     # print(vars_pair)
-    # print(wa_res)
-    # print(ac_res)
+    print(wa_res)
+    print(ac_res)
     vars_len = {}
     for i in range(len(wa_res)):
         wa_item = wa_res[i]
@@ -134,7 +135,7 @@ def cal_VSBFL_rank(wa_file, ac_file, test_dir_path, language):
             'value': VSBFL_suspicion[variable]
         })
     VSBFL_rank.sort(key=lambda s:(s['value']), reverse=True)
-    # print(VSBFL_rank)
+    print(VSBFL_rank)
     return VSBFL_suspicion, VSBFL_rank
 
 

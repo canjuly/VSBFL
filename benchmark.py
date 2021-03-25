@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import util
+import time
+import VFL
 import Parse_ast
 import Coverage
 import openpyxl
@@ -8,7 +11,10 @@ import numpy as np
 import SBFL_Formular as SF
 import Variable_sus as vs
 
-res_file = r'result\fault_loc_sbfl.xlsx'  # 请先自己创建这个文件
+data_path = r'../ITSP-data'
+res_file = ''
+res_file_temp = os.path.join('result', 'time_op2(%s).xlsx')  # 请先自己创建这个文件
+now_fm = ''
 
 def find_pair_by_tag(dir_path):
     '''
@@ -38,7 +44,7 @@ def find_pair_by_res(file_path):
     for i, sheet in enumerate(wb):
         if i == 0:
             continue
-        print(sheet.title)
+        # print(sheet.title)
         buggy_name = ''
         for j, row in enumerate(sheet.rows):
             if j == 0:
@@ -47,7 +53,7 @@ def find_pair_by_res(file_path):
                 buggy_name = row[0].value
             if row[1].value.find('[') >= 0:
                 ac_name_list = eval(row[1].value)
-                pair_info[buggy_name] = ac_name_list
+                pair_info[buggy_name] = ac_name_list[0]
     #     break
     # print(pair_info)
     return pair_info
@@ -64,8 +70,17 @@ def cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed):
         Nuf = failed_test_num - lines_failed[i]
         Ncp = lines_passed[i]
         Nup = passed_test_num - lines_passed[i]
-        Tarantula = SF.cal_turantula(Ncf, Nuf, Ncp, Nup)
-        # Jaccard = SF.cal_jaccard(Ncf, Nuf, Ncp, Nup)
+        sus = 0
+        if now_fm == 'Jaccard':
+            sus = SF.cal_jaccard(Ncf, Nuf, Ncp, Nup)
+        if now_fm == 'Tarantula':
+            sus = SF.cal_turantula(Ncf, Nuf, Ncp, Nup)
+        if now_fm == 'Dstar':
+            sus = SF.cal_dstar(Ncf, Nuf, Ncp, Nup)
+        if now_fm == 'Ochiai':
+            sus = SF.cal_ochiai(Ncf, Nuf, Ncp, Nup)
+        if now_fm == 'Op2':
+            sus = SF.cal_op2(Ncf, Nuf, Ncp, Nup)
         # Naish = SF.cal_naish(Ncf, Nuf, Ncp, Nup)
         # GP08 = SF.cal_GP08(Ncf, Nuf, Ncp, Nup)
         # GP10 = SF.cal_GP10(Ncf, Nuf, Ncp, Nup)
@@ -74,7 +89,7 @@ def cal_N_tuple(passed_test_num, failed_test_num, lines_passed,  lines_failed):
         # GP20 = SF.cal_GP20(Ncf, Nuf, Ncp, Nup)
         # GP26 = SF.cal_GP26(Ncf, Nuf, Ncp, Nup)
         # print(i, Jaccard)
-        N_tuple.append(Tarantula)
+        N_tuple.append(sus)
     return N_tuple  #返回值没有第0行
 
 def get_SFL_rank(file_path, test_dir_path, language):
@@ -120,8 +135,15 @@ def get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language):
     # print(file_path, N_tuple, VSBFL_suspicion)
     simple_coefficient = list(np.zeros(len(N_tuple)))
     flag = 0
-    if np.max(N_tuple) - np.min(N_tuple) > 0.001:
+    maxn = 0
+    minn = 99
+    for i in N_tuple:
+        if i != 0:
+            maxn = max(maxn, i)
+            minn = min(minn, i)
+    if maxn - minn > 0.001:
         flag = 1
+    # print(maxn, minn)
     for var in VSBFL_suspicion:
         if VSBFL_suspicion[var] > 0.0001: 
             flag = 1
@@ -135,7 +157,7 @@ def get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language):
             if language == 'cpp' or language == 'c':
                 flag = (util.find_pos('cin', line) or util.find_pos('printf', line))
             elif language == 'py':
-                flag = util.find_pos('printf', line)
+                flag = util.find_pos('print', line)
             # print(line)
             # print(util.find_pos('printf', line))
             if flag == True:
@@ -200,18 +222,19 @@ def cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info):
     for i in range(len(variable_info)):
         coefficient = 1.0
         for variable in variable_info[i]:
-            coefficient = coefficient * (1 + VSBFL_dic[variable])
+            coefficient += VSBFL_dic[variable]
         # if len(variable_info[i]) != 0:
         #     coefficient = 1 + coefficient / len(variable_info[i])
         # else:
         #     coefficient = 1.0
         coefficient_list.append(coefficient)
+    print(coefficient_list)
     for i in range(len(N_tuple)):
         final_rank_t.append({
             'no': i + 1,
             'pos': (1.0 + N_tuple[i]) * coefficient_list[i]
         })
-    # print(final_rank_t)
+    print(final_rank_t)
     final_rank_t.sort(key=lambda s: s['pos'], reverse=True)
     tmp_list = []
     for i in range(len(final_rank_t)):
@@ -266,18 +289,19 @@ def run_file(file_path, ac_file, test_dir_path, language):
     '''
     计算程序的最后怀疑度列表
     '''
-    print(file_path, ac_file)
+    # print(file_path, ac_file)
     SFL_rank, SFL_sus, N_tuple = get_SFL_rank(file_path, test_dir_path, language)
     # print(N_tuple)
-    final_rank, VSBFL_rank = cal_final_rank2(SFL_rank, SFL_sus)
-    # VSBFL_suspicion, VSBFL_rank = vs.cal_VSBFL_rank(file_path, ac_file, test_dir_path, language)
-    # SFL_rank, SFL_sus, N_tuple = get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language)
-    # # print(N_tuple)
-    # variable_list = list(VSBFL_suspicion.keys())
-    # variable_info = util.collect_variable_info(variable_list, file_path)
-    # # print(variable_info)
-    # final_rank = cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info)
-    print(final_rank)
+    # final_rank, VSBFL_rank = VFL.get_VFL_list(file_path, N_tuple)
+    # final_rank, VSBFL_rank = cal_final_rank2(SFL_rank, SFL_sus)
+    VSBFL_suspicion, VSBFL_rank = vs.cal_VSBFL_rank(file_path, ac_file, test_dir_path, language)
+    SFL_rank, SFL_sus, N_tuple = get_simple_coefficient(file_path, N_tuple, VSBFL_suspicion, language)
+    # print(N_tuple)
+    variable_list = list(VSBFL_suspicion.keys())
+    variable_info = util.collect_variable_info(variable_list, file_path)
+    # print(variable_info)
+    final_rank = cal_final_rank(VSBFL_rank, SFL_rank, N_tuple, variable_info)
+    # print(final_rank)
     return final_rank, VSBFL_rank
 
 def run_dir(file_dir_path, pair_info, test_dir_path):
@@ -286,7 +310,10 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
     '''
     file_list = os.listdir(file_dir_path)
     wb = openpyxl.load_workbook(res_file)
-    problem_id = file_dir_path.split('\\')[-2]
+    if sys.platform == "linux":
+        problem_id = file_dir_path.split('/')[-2]
+    else:
+        problem_id = file_dir_path.split('\\')[-2]
     wb.create_sheet(problem_id)
     ws = wb[problem_id]
     ws.append({'a':'name', 'b':'suspicion', 'c':'variable_suspicion'})
@@ -294,7 +321,7 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
         file_type = file.split('.')[-1]
         if file_type == 'c' or file_type == 'cpp' or file_type == 'py':
             wa_file_path = os.path.join(file_dir_path, file)
-            ac_file_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem_id), 'AC_'+file_type, pair_info[file])
+            ac_file_path = os.path.join(data_path, str(problem_id), 'AC_'+file_type, pair_info[file])
             # print(wa_file_path, ac_file_path)
             try:
                 final_rank, VSBFL_rank = run_file(wa_file_path, ac_file_path, test_dir_path, file_type)
@@ -305,25 +332,63 @@ def run_dir(file_dir_path, pair_info, test_dir_path):
                 ws.append({'a':file, 'b':'[]', 'c':'[]'})
                 # util.add_file(res_file, file + '    ' + 'contains error\n')
         # break
-    wb.save(res_file)
+    # wb.save(res_file)
     return
 
+def cal_time(file_dir_path, pair_info, test_dir_path):
+    '''
+    计算时间
+    '''
+    file_list = os.listdir(file_dir_path)
+    wb = openpyxl.load_workbook(res_file)
+    if sys.platform == "linux":
+        problem_id = file_dir_path.split('/')[-2]
+    else:
+        problem_id = file_dir_path.split('\\')[-2]
+    wb.create_sheet(problem_id)
+    ws = wb[problem_id]
+    ws.append({'a': 'solution_id', 'b': 'time'})
+    for file in file_list:
+        file_type = file.split('.')[-1]
+        if file_type == 'c' or file_type == 'cpp' or file_type == 'py':
+            wa_file_path = os.path.join(file_dir_path, file)
+            ac_file_path = os.path.join(data_path, str(problem_id), 'AC_'+file_type, pair_info[file])
+            # print(wa_file_path, ac_file_path)
+            time_start=time.time()
+            try:
+                final_rank, VSBFL_rank = run_file(wa_file_path, ac_file_path, test_dir_path, file_type)
+                # util.add_file(res_file, file + '    ' + str(final_rank) + '    ' + str(VSBFL_rank) + '\n')
+            except Exception:
+                print(Exception)
+                # util.add_file(res_file, file + '    ' + 'contains error\n')
+            time_end=time.time()
+            ws.append({'a': file, 'b': str(time_end - time_start)})
+        # break
+    wb.save(res_file)
 
 if __name__ == "__main__":
 
-    # pair_info = find_pair_by_res(r'E:\fault_loc\VSFL-TCG\result\cluster.xlsx')
-    # pair_info = find_pair_by_tag(r'E:\fault_loc\ITSP-data\2810\Tag_c')
-    # file_path = r'E:\fault_loc\ITSP-data\2810\WA_c\270083_buggy.c'
-    # ac_file = os.path.join(r'E:\fault_loc\ITSP-data\2810\AC_c', pair_info['270083_buggy.c'])
-    # test_dir_path = r'E:\fault_loc\ITSP-data\2810\TEST_DATA_TCG1'
-    # run_file(file_path, ac_file, test_dir_path, 'c')
+    # pair_info = find_pair_by_res(r'D:\fault_loc\VSFL-TCG\result\cluster.xlsx')
+    # pair_info = find_pair_by_tag(os.path.join(data_path, '2810', 'Tag_c'))
+    # for pro in ['270083_buggy.c', '270053_buggy.c', '270068_buggy.c']:
+    #     file_path = os.path.join(data_path, '2810', 'WA_c', pro)
+    #     ac_file = os.path.join(data_path, '2810', 'AC_c', pair_info[pro])
+    #     test_dir_path = os.path.join(data_path, '2810', 'TEST_DATA_TCG1')
+    #     run_file(file_path, ac_file, test_dir_path, 'c')
 
-    problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]
-    for problem in problem_list:
-        # problem = 2871
-        print(problem)
-        pair_info = find_pair_by_tag(os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'Tag_c'))
-        dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'WA_c')
-        test_dir_path = os.path.join(r'E:\fault_loc\ITSP-data', str(problem), 'TEST_DATA_TCG1')
-        run_dir(dir_path, pair_info, test_dir_path)
-        # break
+    # for fm in ['Jaccard', 'Tarantula', 'Dstar', 'Ochiai', 'Op2']:
+    for fm in ['Jaccard']:
+        now_fm = fm
+        res_file = res_file_temp % (fm)
+        problem_list = [2810, 2811, 2812, 2813, 2824, 2825, 2827, 2828, 2830, 2831, 2832, 2833, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871]
+        
+        for problem in problem_list:
+            # problem = 2810
+            print(problem)
+            pair_info = find_pair_by_tag(os.path.join(data_path, str(problem), 'Tag_c'))
+            # pair_info = find_pair_by_res(r'D:\fault_loc\VSFL-TCG\result\cluster_op2.xlsx')
+            dir_path = os.path.join(data_path, str(problem), 'WA_c')
+            test_dir_path = os.path.join(data_path, str(problem), 'TEST_DATA_TCG1')
+            # run_dir(dir_path, pair_info, test_dir_path)
+            cal_time(dir_path, pair_info, test_dir_path)
+            # break

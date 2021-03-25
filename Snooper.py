@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import re
@@ -7,10 +8,10 @@ import SBFL_Formular as SF
 import pysnooper
 import Cpp_sequence as cs
 
-py_snooper_file_name = r'log\snooper.py'
-py_variable_sequence_file = r'log\py_variable.log'
-temp_output_file = r'log\temp.out'
-temp_compile_file = r'log\temp'
+py_snooper_file_name = os.path.join('log', 'snooper.py')
+py_variable_sequence_file = os.path.join('log', 'py_variable.log')
+temp_output_file = os.path.join('log', 'temp.out')
+temp_compile_file = os.path.join('log', 'temp')
 
 
 
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     # print(get_py_variable_sequence(file_path, test_dir_path))
 
     
-    file_path = r'E:\fault_loc\ITSP-data\2866\WA_c\277755_buggy.c'
-    test_dir_path = r'E:\fault_loc\ITSP-data\2866\TEST_DATA_TCG1'
+    file_path = r'E:\fault_loc\ITSP-data\2828\WA_c\271464_buggy.c'
+    test_dir_path = r'E:\fault_loc\ITSP-data\2828\TEST_DATA_TCG1'
     print(get_cpp_variable_sequence(file_path, test_dir_path))
     

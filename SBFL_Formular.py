@@ -1,6 +1,16 @@
+# -*- coding: utf-8 -*-
 import math
 
 debug = False
+
+'''
+Ncf = 失败测试样例中执行该行的数量
+Nuf = 失败测试样例中未执行该行的数量
+Ncf + Nuf为总失败样例数
+Ncp = 成功测试样例中执行该行的数量
+Nup = 成功测试样例中未执行该行的数量
+Ncp + Nup为总成功样例数
+'''
 
 def cal_jaccard(Ncf, Nuf, Ncp, Nup):
     if debug:
@@ -32,6 +42,7 @@ def cal_GP10(Ncf, Nuf, Ncp, Nup):
     if Nup == 0:
         return 0
     a = Ncf - 1 / Nup
+    print(a)
     b = math.sqrt(a)
     return b
 
@@ -73,56 +84,58 @@ def cal_turantula(Ncf, Nuf, Ncp, Nup):
     if debug:
         print("turantula:%d %d %d %d" %(Ncf, Nuf, Ncp, Nup))
     if Ncf + Nuf == 0:
-        return 0
+        a = 0
+    else:
+        a = Ncf / (Ncf + Nuf)
     if Ncp + Nup == 0:
-        return 0
-    a = Ncf / (Ncf + Nuf)
-    b = Ncp / (Ncp + Nup)
+        b = 0
+    else:
+        b = Ncp / (Ncp + Nup)
     if a + b == 0:
         return 0
     c = a / (a + b)
     return c
 
-def cal_dstar(tf, tp, aef, aep, anf, anp, index):
+def cal_dstar(Ncf, Nuf, Ncp, Nup):
     if debug:
-        print("Dstar:%d %d %d %d %d %d" %(tf, tp, aef, aep, anf, anp))
-    a = aep + (tf - aef)
+        print("Dstar:%d %d %d %d" %(Ncf, Nuf, Ncp, Nup))
+    a = Ncp + Nuf
     if a == 0:
         return 0
-    b = math.pow(aef, index)
+    b = math.pow(Ncf, 3) #3次方是作者推荐的
     c = b / a
     return c
 
 
-def cal_ochiai(tf, tp, aef, aep, anf, anp):
+def cal_ochiai(Ncf, Nuf, Ncp, Nup):
     if debug:
-        print("Ochiai:%d %d %d %d %d %d" %(tf, tp, aef, aep, anf, anp))
-    if aef == 0:
+        print("Ochiai:%d %d %d %d" %(Ncf, Nuf, Ncp, Nup))
+    if Ncf + Nuf == 0:
         return 0
-    a = aef + aep
-    b = math.sqrt(tf * a)
+    a = Ncf + Ncp
+    b = math.sqrt((Ncf + Nuf) * a)
     if b == 0:
         return 0
-    c = aef / b
+    c = Ncf / b
     return c
 
 
-def cal_ochiai_new(tf, tp, aef, aep, anf, anp):
+def cal_ochiai_new(Ncf, Nuf, Ncp, Nup):
     if debug:
-        print("Ochiai_new:%d %d %d %d %d %d" %(tf, tp, aef, aep, anf, anp))
-    if aef == 0:
+        print("Ochiai_new:%d %d %d %d" %(Ncf, Nuf, Ncp, Nup))
+    if Ncf + Nuf == 0:
         return 0
-    a = aef + aep
-    b = math.sqrt(tf * a)
+    a = Ncf + Ncp
+    b = math.sqrt((Ncf + Nuf) * a)
     if b == 0:
         return 0
-    c = math.pow(aef, 3) / b
+    c = math.pow(Ncf, 3) / b #3次方是作者推荐的
     return c
 
 
-def cal_op2(tf, tp, aef, aep, anf, anp):
+def cal_op2(Ncf, Nuf, Ncp, Nup):
     if debug:
-     print("op2:%d %d %d %d %d %d" %(tf, tp, aef, aep, anf, anp))
-    a = aep / (tp + 1)
-    b = aef - a
+     print("op2:%d %d %d %d" %(Ncf, Nuf, Ncp, Nup))
+    a = Ncp / (Ncp + Nup + 1)
+    b = Ncf - a
     return b

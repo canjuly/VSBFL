@@ -1,4 +1,5 @@
-import pylcs
+# -*- coding: utf-8 -*-
+# import pylcs
 
 def read_file(file_name):
     '''
