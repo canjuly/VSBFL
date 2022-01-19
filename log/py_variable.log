@@ -1,0 +1,40 @@
+Source path:... log\snooper.py
+New var:....... __name__ = '__main__'
+New var:....... __doc__ = None
+New var:....... __package__ = None
+New var:....... __loader__ = <_frozen_importlib_external.SourceFileLoader object at 0x000001E0A754D278>
+New var:....... __spec__ = None
+New var:....... __annotations__ = {}
+New var:....... __builtins__ = <module 'builtins' (built-in)>
+New var:....... __file__ = 'log\\snooper.py'
+New var:....... __cached__ = None
+New var:....... pysnooper = <module 'pysnooper' from 'C:\\Users\\admin\\anac...on3\\lib\\site-packages\\pysnooper\\__init__.py'>
+14:21:32.311640 line         4     while True:
+14:21:32.311640 line         5         a,b=input().split()
+Source path:... C:\Users\admin\anaconda3\envs\python3\lib\codecs.py
+Starting var:.. self = <encodings.gbk.IncrementalDecoder object at 0x000001E0A7519828>
+14:21:32.311640 call       280     def getstate(self):
+14:21:32.311640 line       292         return (b"", 0)
+14:21:32.311640 return     292         return (b"", 0)
+Return value:.. (b'', 0)
+Source path:... log\snooper.py
+New var:....... a = '123'
+New var:....... b = '1234'
+14:21:32.311640 line         6         k=1
+New var:....... k = 1
+14:21:32.311640 line         7         if len(a)!=len(b):
+14:21:32.311640 line         8             print("No")
+14:21:32.311640 line         9             k=0
+Modified var:.. k = 0
+14:21:32.311640 line        13         if k==1:
+14:21:32.311640 line         5         a,b=input().split()
+Source path:... C:\Users\admin\anaconda3\envs\python3\lib\codecs.py
+Starting var:.. self = <encodings.gbk.IncrementalDecoder object at 0x000001E0A7519828>
+14:21:32.327237 call       280     def getstate(self):
+14:21:32.327237 line       292         return (b"", 0)
+14:21:32.327237 return     292         return (b"", 0)
+Return value:.. (b'', 0)
+Source path:... log\snooper.py
+14:21:32.327237 exception    5         a,b=input().split()
+Exception:..... EOFError: EOF when reading a line
+Elapsed time: 00:00:00.015597

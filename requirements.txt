@@ -1,0 +1,7 @@
+certifi==2020.6.20
+coverage==5.3
+munkres==1.1.4
+pyastyle==1.1.5
+pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+PySnooper==0.4.2
+wincertstore==0.2
